@@ -1,2 +1,3 @@
-# gradvi-experiments
-Experiments and simulations for GradVI
+# GradVI experiments
+
+Experiments and simulations for GradVI manuscript.

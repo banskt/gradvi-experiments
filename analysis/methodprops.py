@@ -159,7 +159,7 @@ def plot_metainfo():
     plotmeta['mr_ash'] = \
         PlotInfo(color     = "#C10020", # Vivid Red (kelly 5)
                  facecolor = "#C10020",
-                 label     = "Mr.Ash",
+                 label     = "CAVI",
                  marker    = "o",
                  size      = 8,
                  linewidth = 2,
@@ -169,27 +169,27 @@ def plot_metainfo():
     plotmeta['mr_ash_init'] = \
         PlotInfo(color     = "#C10020", # Vivid Red (kelly 5)
                  facecolor = "white",
-                 label     = "Mr.Ash(init)",
+                 label     = "CAVI (init)",
                  marker    = "o",
                  size      = 8,
                  linewidth = 2,
                  linestyle = "solid",
                  zorder    = 200,
                 )
-    plotmeta['em_vamp'] = \
+    plotmeta['gradvi_direct_lasso_init'] = \
         PlotInfo(color     = "#000000", # Black
                  facecolor = "None",
-                 label     = "EM-VAMP",
+                 label     = "GradVI (inv, init)",
                  marker    = "o",
                  size      = 8,
                  linewidth = 2,
                  linestyle = "solid",
                  zorder    = 30,
                 )
-    plotmeta['em_vamp_ash'] = \
+    plotmeta['gradvi_compound_lasso_init'] = \
         PlotInfo(color     = "#000000", # Black
                  facecolor = "None",
-                 label     = "EM-VAMP (ash)",
+                 label     = "GradVI (comp, init)",
                  marker    = "*",
                  size      = 12,
                  linewidth = 2,
@@ -206,20 +206,20 @@ def plot_metainfo():
                  linestyle = "solid",
                  zorder    = 30,
                 )
-    plotmeta['ebmr_lasso'] = \
+    plotmeta['gradvi_compound'] = \
         PlotInfo(color     = "#3A6200", # Dark Green
                  facecolor = "None",
-                 label     = "EBMR (DExp, Py)",
+                 label     = "GradVI (comp)",
                  marker    = "v",
                  size      = 8,
                  linewidth = 2,
                  linestyle = "solid",
                  zorder    = 30,
                 )
-    plotmeta['ebmr_ashR'] = \
+    plotmeta['gradvi_direct'] = \
         PlotInfo(color     = "#6DB802", # Light Green
                  facecolor = "#6DB802",
-                 label     = "EBMR (mix-DExp, R)",
+                 label     = "GradVI (inv)",
                  marker    = "<",
                  size      = 8,
                  linewidth = 2,

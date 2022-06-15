@@ -28,7 +28,8 @@ DSC:
                   lasso_1se, elastic_net_1se,
                   scad, mcp, l0learn,
                   susie, varbvs, varbvsmix, blasso, bayesb,
-                  mr_ash, mr_ash_lasso_init
+                  mr_ash, mr_ash_lasso_init,
+                  gradvi_direct, gradvi_compound
     predict:      predict_linear
     score:        mse, coef_mse
   run: 
@@ -156,6 +157,16 @@ mr_ash_lasso_init (mr_ash_base):  mr_ash_lasso_init.R
 
 # GradVI methods
 # Mr.Ash prior
+gradvi_direct(fitpy): gradvi_direct.py
+  ncomp: 20
+  sparsity: 0.9
+  skbase: 2.0
+
+
+gradvi_compound(fitpy): gradvi_compound.py
+  ncomp: 20
+  sparsity: 0.9
+  skbase: 2.0
 
 
 # predict modules

@@ -25,10 +25,10 @@ DSC:
   define:
     simulate:     equicorrgauss
     fit:          ridge, lasso, elastic_net,
-                  lasso_1se, elastic_net_1se, 
+                  lasso_1se, elastic_net_1se,
                   scad, mcp, l0learn,
                   susie, varbvs, varbvsmix, blasso, bayesb,
-                  mr_ash
+                  mr_ash, mr_ash_lasso_init
     predict:      predict_linear
     score:        mse, coef_mse
   run: 
@@ -72,7 +72,6 @@ simparams:
 equicorrgauss(simparams): equicorrgauss.py
   pve:     0.8
   rho:     0.6
-
 
 # fit modules
 # ===================
@@ -151,6 +150,9 @@ mr_ash_base (fitR):     mr_ash.R
 mr_ash (mr_ash_base):
   grid:          (2^((0:19)/20) - 1)^2
 
+# This is Mr.Ash with Lasso initialization
+mr_ash_lasso_init (mr_ash_base):  mr_ash_lasso_init.R
+  grid:          (2^((0:19)/20) - 1)^2
 
 # GradVI methods
 # Mr.Ash prior

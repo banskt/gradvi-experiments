@@ -1,4 +1,13 @@
+# Vim swaps
+*.swp
 
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+
+# DSC 
 **/.dsc
 dsc/results
 dsc/trial

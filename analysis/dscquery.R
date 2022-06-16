@@ -63,7 +63,7 @@ saveRDS(dscout, file = opt$rdsfile)
 # conditions
 #
 # setwd("/home/saikat/Documents/work/ebmr/simulation/mr-ash-dsc/dsc")
-# dscout <- dscquery(dsc.outdir = "dsc_result", 
-#                    targets = c("simulate", "simulate.se", "simulate.dims", "simulate.sfrac", "simulate.pve"),
+# targets <- c("simulate", "simulate.dims", "simulate.se", "simulate.rho", "simulate.sfix", "simulate.pve", "fit", "fit.DSC_TIME", "mse.err", "coef_mse.err")
+# dscout <- dscquery(dsc.outdir = "dsc_result", targets = targets,
 #                    conditions = c("$(simulate) == 'indepgauss'", "$(simulate.dims) == '(100,200)'"),
 #                    verbose = TRUE)

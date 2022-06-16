@@ -166,7 +166,7 @@ def plot_metainfo():
                  linestyle = "solid",
                  zorder    = 200,
                 )
-    plotmeta['mr_ash_init'] = \
+    plotmeta['mr_ash_lasso_init'] = \
         PlotInfo(color     = "#C10020", # Vivid Red (kelly 5)
                  facecolor = "white",
                  label     = "CAVI (init)",

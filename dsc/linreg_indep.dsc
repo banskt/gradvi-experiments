@@ -159,13 +159,13 @@ mr_ash_lasso_init (mr_ash_base):  mr_ash_lasso_init.R
 # Mr.Ash prior
 gradvi_direct(fitpy): gradvi_direct.py
   ncomp: 20
-  sparsity: 0.9
+  sparsity: 0.0
   skbase: 2.0
 
 
 gradvi_compound(fitpy): gradvi_compound.py
   ncomp: 20
-  sparsity: 0.9
+  sparsity: 0.0
   skbase: 2.0
 
 

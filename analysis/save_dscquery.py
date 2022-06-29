@@ -11,3 +11,7 @@ targets = ["simulate", "simulate.dims", "simulate.se", "simulate.rho", "simulate
 
 dscout = dscrutils.dscquery(os.path.realpath(outdir), targets)
 dscout.to_pickle(outfile)
+
+## one lines for copy-paste
+## targets = ["simulate", "simulate.dims", "simulate.se", "simulate.rho", "simulate.sfix", "simulate.pve", "fit", "fit.DSC_TIME", "mse.err", "coef_mse.err"]
+## dscrutils.dscquery(outdir, targets).to_pickle(outfile)

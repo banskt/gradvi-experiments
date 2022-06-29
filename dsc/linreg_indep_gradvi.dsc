@@ -20,16 +20,11 @@ DSC:
                   modules/fit,
                   modules/predict,
                   modules/score
-  output:         /home/saikatbanerjee/scratch/work/gradvi-experiments/linreg_indep
-  replicate:      10
+  output:         /home/saikatbanerjee/scratch/work/gradvi-experiments/linreg_indep_gradvi
+  replicate:      2
   define:
     simulate:     equicorrgauss
-    fit:          ridge, lasso, elastic_net,
-                  lasso_1se, elastic_net_1se,
-                  scad, mcp, l0learn,
-                  susie, varbvs, varbvsmix, blasso, bayesb,
-                  mr_ash, mr_ash_lasso_init,
-                  gradvi_direct, gradvi_compound
+    fit:          mr_ash, gradvi_direct, gradvi_compound
     predict:      predict_linear
     score:        mse, coef_mse
   run: 
@@ -54,7 +49,7 @@ simparams:
 # pve: proportion of variance explained (required for equicorrgauss.py)
 # snr: signal-to-noise ratio (required for changepoint.py)
   dims:    R{list(c(n=500, p=10000))}
-  sfix:    1, 2, 5, 10, 20
+  sfix:    20
   bfix:    None
   sfrac:   None
   basis_k: None
@@ -71,7 +66,7 @@ simparams:
   $se:     sigma
 
 equicorrgauss(simparams): equicorrgauss.py
-  pve:     0.4, 0.6, 0.8
+  pve:     0.6
   rho:     0.0
 
 # fit modules

@@ -29,7 +29,7 @@ def plot_metainfo():
                  #facecolor = "#93BFEB",
                  facecolor = "None",
                  label     = "L0Learn",
-                 marker    = "<",
+                 marker    = "v",
                  size      = 8,
                  linewidth = 2,
                  linestyle = "solid",
@@ -102,34 +102,35 @@ def plot_metainfo():
                  zorder    = 30,
                 )
     plotmeta['susie'] = \
-        PlotInfo(color     = "#FF6800", # Vivid Orange (kelly 3)
+        PlotInfo(color     = "#A87D32",
                  #facecolor = "#FF6800",
-                 facecolor = "None",
+                 facecolor = "white",
                  label     = "Susie",
-                 marker    = "+",
-                 size      = 12,
+                 marker    = "X",
+                 size      = 10,
                  linewidth = 2,
                  linestyle = "solid",
                  zorder    = 30,
                 )
     plotmeta['varbvs'] = \
-        PlotInfo(color     = "#232C16",
+        PlotInfo(color     = "#FFA600", # light orange
                  #facecolor = "#232C16",
-                 facecolor = "None",
+                 facecolor = "white",
                  label     = "varbvs",
-                 marker    = "X",
-                 size      = 12,
+                 marker    = "p",
+                 size      = 10,
                  linewidth = 2,
                  linestyle = "solid",
                  zorder    = 30,
                 )
     plotmeta['varbvsmix'] = \
-        PlotInfo(color     = "#948B3D", # Olive
+        PlotInfo(color     = "#FFA600", # light orange
+                 facecolor = "#FFA600", 
+                 #color     = "#948B3D", # Olive
                  #facecolor = "#948B3D",
-                 facecolor = "None",
-                 label     = "varvbs (mix)",
-                 marker    = "x",
-                 size      = 12,
+                 label     = "varbvs (mix)",
+                 marker    = "p",
+                 size      = 10,
                  linewidth = 2,
                  linestyle = "solid",
                  zorder    = 30,
@@ -148,7 +149,7 @@ def plot_metainfo():
     plotmeta['blasso'] = \
         PlotInfo(color     = "#CEA262", # Grayish Yellow (kelly 6)
                  #facecolor = "#CEA262",
-                 facecolor = "None",
+                 facecolor = "white",
                  label     = "BLasso",
                  marker    = "*",
                  size      = 12,
@@ -157,24 +158,24 @@ def plot_metainfo():
                  zorder    = 30,
                 )
     plotmeta['mr_ash'] = \
-        PlotInfo(color     = "#C10020", # Vivid Red (kelly 5)
-                 facecolor = "#C10020",
+        PlotInfo(color     = "#FF6800", # Vivid Orange (kelly 3)
+                 facecolor = "#FF6800",
                  label     = "CAVI",
-                 marker    = "o",
+                 marker    = "s",
                  size      = 8,
                  linewidth = 2,
                  linestyle = "solid",
-                 zorder    = 200,
+                 zorder    = 100,
                 )
     plotmeta['mr_ash_lasso_init'] = \
-        PlotInfo(color     = "#C10020", # Vivid Red (kelly 5)
+        PlotInfo(color     = "#FF6800", # Vivid Red (kelly 5)
                  facecolor = "white",
                  label     = "CAVI (init)",
-                 marker    = "o",
+                 marker    = "s",
                  size      = 8,
                  linewidth = 2,
                  linestyle = "solid",
-                 zorder    = 200,
+                 zorder    = 100,
                 )
     plotmeta['gradvi_direct_lasso_init'] = \
         PlotInfo(color     = "#000000", # Black
@@ -207,24 +208,28 @@ def plot_metainfo():
                  zorder    = 30,
                 )
     plotmeta['gradvi_compound'] = \
-        PlotInfo(color     = "#3A6200", # Dark Green
-                 facecolor = "None",
+        PlotInfo(color     = "#C10020", # Vivid Red (kelly 5)
+                 facecolor = 'white',
+                 #color     = "#3A6200", # Dark Green
+                 #facecolor = "None",
                  label     = "GradVI (comp)",
-                 marker    = "v",
+                 marker    = "o",
                  size      = 8,
                  linewidth = 2,
                  linestyle = "solid",
-                 zorder    = 30,
+                 zorder    = 200,
                 )
     plotmeta['gradvi_direct'] = \
-        PlotInfo(color     = "#6DB802", # Light Green
-                 facecolor = "#6DB802",
+        PlotInfo(color     = "#C10020", # Vivid Red (kelly 5)
+                 facecolor = "#C10020",
+        	     #color     = "#6DB802", # Light Green
+                 #facecolor = "#6DB802",
                  label     = "GradVI (inv)",
-                 marker    = "<",
+                 marker    = "o",
                  size      = 8,
                  linewidth = 2,
                  linestyle = "solid",
-                 zorder    = 30,
+                 zorder    = 200,
                 )
     plotmeta['ebmr_ash'] = \
         PlotInfo(color     = "#A5BD82", # Light Gray Green

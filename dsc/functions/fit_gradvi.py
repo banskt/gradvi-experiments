@@ -47,6 +47,7 @@ def get_ash_scaled(k = 20, sparsity = 0.8, skbase = 2.0, **kwargs):
 
 
 def fit_mrash_gradvi_direct(X, y, ncomp = 20, sparsity = 0.8, skbase = 2.0, binit = None, s2init = None, winit = None):
+    if s2init is None: s2init = 1.0
     prior = get_ash_scaled(k = ncomp, sparsity = sparsity, skbase = skbase)
     gv = LinearRegression(obj = 'direct')
     gv.fit(X, y, prior, b_init = binit, s2_init = s2init)
@@ -55,6 +56,7 @@ def fit_mrash_gradvi_direct(X, y, ncomp = 20, sparsity = 0.8, skbase = 2.0, bini
     
 
 def fit_mrash_gradvi_compound(X, y, ncomp = 20, sparsity = 0.8, skbase = 2.0, binit = None, s2init = None, winit = None):
+    if s2init is None: s2init = 1.0
     prior = get_ash_scaled(k = ncomp, sparsity = sparsity, skbase = skbase)
     gv = LinearRegression()
     gv.fit(X, y, prior, b_init = binit, s2_init = s2init)

@@ -1,9 +1,6 @@
 # A DSC for evaluating prediction accuracy of 
 # multiple linear regression methods in different scenarios.
 
-# A DSC for evaluating prediction accuracy of multiple linear regression
-# methods in different scenarios.
-# This is designed to reproduce the results of the manuscript of Mr. Ash by Kim, Wang, Carbonetto and Stephens
 DSC:
   R_libs:         MASS, 
                   glmnet, 
@@ -20,10 +17,10 @@ DSC:
                   modules/fit,
                   modules/predict,
                   modules/score
-  output:         /home/saikatbanerjee/scratch/work/gradvi-experiments/linreg_indep
-  replicate:      10
+  output:         /home/saikatbanerjee/scratch/work/gradvi-experiments/linreg_corr
+  replicate:      1
   define:
-    simulate:     equicorrgauss
+    simulate:     blockdiag
     fit:          ridge, lasso, elastic_net,
                   lasso_1se, elastic_net_1se,
                   scad, mcp, l0learn,
@@ -54,7 +51,7 @@ simparams:
 #                (if sequence, length must be equal to number of non-zero coefficients).
 # pve: proportion of variance explained (required for equicorrgauss.py)
   dims:    R{list(c(n=500, p=10000))}
-  sfix:    1, 2, 5, 10, 20
+  sfix:    5, 20
   bfix:    None
   sfrac:   None
   signal:  "normal"
@@ -69,9 +66,10 @@ simparams:
   $beta:   beta
   $se:     sigma
 
-equicorrgauss(simparams): equicorrgauss.py
-  pve:     0.4, 0.6, 0.8
-  rho:     0.0
+blockdiag(simparams): blockdiag.py
+  pve:     0.6
+  rholist: [0.8, 0.8, 0.8]
+  min_block_size: 1000
 
 # fit modules
 # ===================

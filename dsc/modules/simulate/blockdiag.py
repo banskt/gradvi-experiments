@@ -7,6 +7,6 @@ n, p, s = \
 X, y, Xtest, ytest, beta, sigma = \
     simulate.linear_model(
         n, p, s, pve, ntest = ntest,
-        corr_method = 'equicorr', rho = [rho],
+        corr_method = 'blockdiag', rho = rholist, min_block_size = min_block_size,
         signal = signal, bfix = bfix,
         seed = None)

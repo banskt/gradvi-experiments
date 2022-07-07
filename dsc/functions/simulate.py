@@ -22,7 +22,7 @@ def center_and_scale(Z):
     return Znew
 
 
-def sample_coefs (p, bidx, method="normal", bfix=None):
+def sample_coefs (p, bidx, method="normal", bfix=None, options = {}):
     ''' 
     Sample coefficientss from a distribution (method = normal / gamma)
     or use a specified value for all betas:
@@ -41,7 +41,9 @@ def sample_coefs (p, bidx, method="normal", bfix=None):
 
     # sample beta from Gaussian(mean = 0, sd = 1)
     if method == "normal":
-        beta[bidx] = np.random.normal(size = s)
+        loc = options.get('loc', 0.0)
+        scale = options.get('scale', 1.0)
+        beta[bidx] = np.random.normal(loc, scale, size = s)
 
     # receive fixed beta input
     elif method == "fixed":
@@ -54,22 +56,137 @@ def sample_coefs (p, bidx, method="normal", bfix=None):
 
     # sample beta from a Gamma(40, 0.1) distribution and assign random sign
     elif method == "gamma":
-        params = [40, 0.1]
-        beta[bidx] = np.random.gamma(params[0], params[1], size = s)
+        shape = options.get('shape', 40)
+        scale = options.get('scale', 0.1)
+        beta[bidx] = np.random.gamma(shape, scale, size = s)
         beta[bidx] = np.multiply(beta[bidx], sample_sign(s))
 
     return beta
 
 
-def get_responses (X, b, sd):
-    return np.dot(X, b) + sd * np.random.normal(size = X.shape[0])
+def get_responses (x, b, std):
+    return np.dot(x, b) + std * np.random.normal(size = x.shape[0])
 
 
-def get_sd_from_pve (X, b, pve):
-    return np.sqrt(np.var(np.dot(X, b)) * (1 - pve) / pve)
+def get_sd_from_pve (x, b, pve):
+    return np.sqrt(np.var(np.dot(x, b)) * (1 - pve) / pve)
+
+
+def linear_model (n, p, s, pve, ntest = 1000,
+        signal = "normal", signal_params = {}, bfix = None,
+        rho = [0.0], corr_method = 'iid', min_block_size = 100,
+        seed = None,
+        standardize = True):
+    
+    # set seed
+    if seed is not None: np.random.seed(seed)
+
+    # sample predictors
+    # ensure rho is a list, array, tuple, set, or any other iterable
+    if not isinstance(rho, (collections.abc.Sequence, np.ndarray)): rho = [rho]
+    # seed is already set
+    xtrain, xtest = predictor_factory(n, ntest, p, rholist = rho, 
+                            corr_method = corr_method,
+                            min_block_size = min_block_size,
+                            standardize = standardize, seed = None)
+
+    # sample coefficients
+    bidx = np.random.choice(p, s, replace = False)
+    beta = sample_coefs(p, bidx, method = signal, bfix = bfix, options = signal_params)
+
+    # standard deviation from PVE
+    std = get_sd_from_pve(xtrain, beta, pve)
+
+    # responses
+    ytrain = get_responses(xtrain, beta, std)
+    ytest  = get_responses(xtest,  beta, std)
+    return xtrain, ytrain, xtest, ytest, beta, std
+
+
+def predictor_factory(n0, n1, p, rholist = [0.8], 
+        corr_method = 'iid', seed = None,
+        min_block_size = 100,
+        standardize = True):
+    if corr_method == 'iid':
+        x0, x1 = equicorr_predictors(n0, n1, p, rho = 0.0, seed = seed, standardize = standardize)
+    elif corr_method == 'equicorr':
+        x0, x1 = equicorr_predictors(n0, n1, p, rho = rholist[0], seed = seed, standardize = standardize)
+    elif corr_method == 'blockdiag':
+        x0, x1 = blockdiag_predictors(n0, n1, p, rholist, min_block_size = min_block_size, seed = seed, standardize = standardize)
+    return x0, x1
+
+
+def equicorr_predictors(n0, n1, p, rho = 0.8, seed = None, standardize = True):
+    '''
+    X is sampled from a multivariate normal, with covariance matrix S.
+    S has unit diagonal entries and constant off-diagonal entries rho.
+    '''
+    if seed is not None: np.random.seed(seed)
+    ntot  = n0 + n1
+    iidx  = np.random.normal(size = ntot * p).reshape(ntot, p)
+    comR  = np.random.normal(size = ntot).reshape(ntot, 1)
+    allx  = comR * np.sqrt(rho) + iidx * np.sqrt(1 - rho)
+
+    # split into training and test data
+    x0 = allx[:n0, :]
+    X1 = allx[n0:, :]
+
+    # standardize if required
+    if standardize:
+        x0 = center_and_scale(x0)
+        x1 = center_and_scale(x1)
+
+    return x0, x1
+
+
+def blockdiag_predictors(n0, n1, p, rholist, min_block_size = 100, seed = None, standardize = True):
+    '''
+    X is sampled from a multivariate normal, with block-diagonal covariance matrix S.
+    S has unit diagonal entries and k blocks of matrices, whose off-diagonal entries 
+    are specified by elements of `rholist`.
+    '''
+    if seed is not None: np.random.seed(seed)
+    ntot  = n0 + n1
+    iidx  = np.random.normal(size = ntot * p).reshape(ntot, p)
+
+    # number of blocks
+    k = len(rholist)
+    # do we need to change min_block_size?
+    c = min(min_block_size, int(p / k))
+    if c == 0: c = 1 # no minimum block size: for numerical reasons, each block must have atleast 1 variable
+    if c < 0:  c = int(p / k) # negative input: equal block size
+    # choose k-1 boundaries from p/c and multiply by c (to ensure minimum block size)
+    bdr = c * np.sort(np.random.choice(int(p / c) - 1, k - 1, replace = False) + 1)
+
+    #
+    allx = np.zeros_like(iidx)
+    if k > 1:
+        for i, rho in enumerate(rholist):
+            comR = np.random.normal(0., 1., size = ntot).reshape(ntot, 1)
+            if i == 0:
+                allx[:, :bdr[i]]  = comR * np.sqrt(rho) + iidx[:, :bdr[i]] * np.sqrt(1 - rho)
+            elif i == k - 1:
+                allx[:, bdr[i-1]:] = comR * np.sqrt(rho) + iidx[:, bdr[i-1]:] * np.sqrt(1 - rho)
+            elif i > 0 and i < k - 1:
+                allx[:, bdr[i-1]:bdr[i]] = comR * np.sqrt(rho) + iidx[:, bdr[i-1]:bdr[i]] * np.sqrt(1 - rho)
+    elif k == 1:
+        rho   = rholist[0]
+        comR  = np.random.normal(0., 1., size = ntot).reshape(ntot, 1)
+        allx  = comR * np.sqrt(rho) + iidx * np.sqrt(1 - rho)
+
+    # split into training and test data
+    x0 = allx[:n0, :]
+    x1 = allx[n0:, :]
+
+    # standardize if required
+    if standardize:
+        x0 = center_and_scale(x0)
+        x1 = center_and_scale(x1)
+
+    return x0, x1
     
 
-def equicorr_predictors (n, p, s, pve, ntest = 1000, 
+def equicorr_predictors_old (n, p, s, pve, ntest = 1000, 
         signal = "normal", seed = None, 
         rho = 0.5, bfix = None,
         standardize = True):

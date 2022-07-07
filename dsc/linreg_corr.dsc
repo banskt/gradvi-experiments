@@ -18,7 +18,7 @@ DSC:
                   modules/predict,
                   modules/score
   output:         /home/saikatbanerjee/scratch/work/gradvi-experiments/linreg_corr
-  replicate:      1
+  replicate:      10
   define:
     simulate:     blockdiag
     fit:          ridge, lasso, elastic_net,
@@ -30,7 +30,7 @@ DSC:
     predict:      predict_linear
     score:        mse, coef_mse
   run: 
-    linreg:       simulate * fit * predict * score
+    linreg_corr:  simulate * fit * predict * score
 
 
 # simulate modules
@@ -68,7 +68,7 @@ simparams:
 
 blockdiag(simparams): blockdiag.py
   pve:     0.6
-  rholist: [0.8, 0.8, 0.8]
+  rholist: [0.9, 0.9, 0.9]
   min_block_size: 1000
 
 # fit modules

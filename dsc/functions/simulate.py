@@ -129,7 +129,7 @@ def equicorr_predictors(n0, n1, p, rho = 0.8, seed = None, standardize = True):
 
     # split into training and test data
     x0 = allx[:n0, :]
-    X1 = allx[n0:, :]
+    x1 = allx[n0:, :]
 
     # standardize if required
     if standardize:

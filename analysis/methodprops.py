@@ -160,7 +160,7 @@ def plot_metainfo():
     plotmeta['mr_ash'] = \
         PlotInfo(color     = "#FF6800", # Vivid Orange (kelly 3)
                  facecolor = "#FF6800",
-                 label     = "CAVI",
+                 label     = "mr.ash",
                  marker    = "s",
                  size      = 8,
                  linewidth = 2,
@@ -170,7 +170,7 @@ def plot_metainfo():
     plotmeta['mr_ash_lasso_init'] = \
         PlotInfo(color     = "#FF6800", # Vivid Red (kelly 5)
                  facecolor = "white",
-                 label     = "CAVI (init)",
+                 label     = "mr.ash (init)",
                  marker    = "s",
                  size      = 8,
                  linewidth = 2,
@@ -212,7 +212,7 @@ def plot_metainfo():
                  facecolor = 'white',
                  #color     = "#3A6200", # Dark Green
                  #facecolor = "None",
-                 label     = "GradVI (comp)",
+                 label     = "ash (comp)",
                  marker    = "o",
                  size      = 8,
                  linewidth = 2,
@@ -224,7 +224,7 @@ def plot_metainfo():
                  facecolor = "#C10020",
         	     #color     = "#6DB802", # Light Green
                  #facecolor = "#6DB802",
-                 label     = "GradVI (inv)",
+                 label     = "ash",
                  marker    = "o",
                  size      = 8,
                  linewidth = 2,

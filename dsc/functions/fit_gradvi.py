@@ -46,22 +46,37 @@ def get_ash_scaled(k = 20, sparsity = 0.8, skbase = 2.0, **kwargs):
     return get_ash(k = k, sparsity = sparsity, skbase = skbase, is_scaled = True, **kwargs)
 
 
-def fit_mrash_gradvi_direct(X, y, ncomp = 20, sparsity = 0.8, skbase = 2.0, binit = None, s2init = None, winit = None):
+def fit_ash_gradvi(X, y, objtype, ncomp = 20, sparsity = 0.8, skbase = 2.0, binit = None, s2init = None, winit = None, return_pip = False):
+    # initialization / prior
     if s2init is None: s2init = 1.0
     prior = get_ash_scaled(k = ncomp, sparsity = sparsity, skbase = skbase)
-    gv = LinearRegression(obj = 'direct')
+
+    # run Gradvi
+    gv = LinearRegression(obj = objtype)
     gv.fit(X, y, prior, b_init = binit, s2_init = s2init)
+
+    # convert class to dict    
     gvdict = class_to_dict(gv, gradvi_class_properties)
-    return gvdict, gv.intercept, gv.coef
+
+    # get NormalMeans
+    if return_pip:
+        gvnm = gv.get_res_normal_means()
+        phi, _, _ = gvnm.posterior()
+        pip  = 1 - phi[:, 0]
+        return gvdict, gv.intercept, gv.coef, pip
+
+    else:
+        return gvdict, gv.intercept, gv.coef
+
+
+## Backward compatibility
+def fit_mrash_gradvi_direct(X, y, ncomp = 20, sparsity = 0.8, skbase = 2.0, binit = None, s2init = None, winit = None):
+    return fit_ash_gradvi(X, y, 'direct', ncomp = ncomp, sparsity = sparsity, skbase = skbase, binit = binit, s2init = s2init, winit = winit, return_pip = False)
     
 
 def fit_mrash_gradvi_compound(X, y, ncomp = 20, sparsity = 0.8, skbase = 2.0, binit = None, s2init = None, winit = None):
-    if s2init is None: s2init = 1.0
-    prior = get_ash_scaled(k = ncomp, sparsity = sparsity, skbase = skbase)
-    gv = LinearRegression()
-    gv.fit(X, y, prior, b_init = binit, s2_init = s2init)
-    gvdict = class_to_dict(gv, gradvi_class_properties)
-    return gvdict, gv.intercept, gv.coef
+    return fit_ash_gradvi(X, y, 'reparametrize', ncomp = ncomp, sparsity = sparsity, skbase = skbase, binit = binit, s2init = s2init, winit = winit, return_pip = False)
+
 
 # This is a placeholder until I find a proper
 # dict converter of the class.

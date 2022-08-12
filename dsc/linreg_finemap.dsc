@@ -17,6 +17,7 @@ DSC:
   define:
     simulate:     blockdiag
     fit:          susie,
+                  mr_ash, mr_ash_lasso_init,
                   gradvi_direct, gradvi_compound
   run: 
     linreg_corr:  simulate * fit
@@ -44,7 +45,7 @@ simparams:
   bfix:    None
   sfrac:   None
   signal:  "normal"
-  ntest:   1000
+  ntest:   0
   $X:      X
   $y:      y
   $Xtest:  Xtest
@@ -57,8 +58,8 @@ simparams:
 
 blockdiag(simparams): blockdiag.py
   pve:     0.6
-  rholist: [0.9, 0.9, 0.9]
-  min_block_size: 1000
+  rholist: [0.95, 0.95]
+  min_block_size: 200
 
 # fit modules
 # ===================
@@ -83,6 +84,26 @@ fitpy:
 
 # Fit a "sum of single effects" (SuSiE) regression model.
 susie (fitR):           susie.R
+
+# Fit Mr.ASH
+# This is an abstract base class, which contains all default values.
+# Several variations of Mr.ASH use this abstract base class (see below).
+mr_ash_base (fitR):     mr_ash.R
+  grid:          NULL
+  init_pi:       NULL
+  init_beta:     NULL
+  init_sigma2:   NULL
+  update_pi:     TRUE
+  update_sigma2: TRUE
+  update_order:  NULL
+
+# This is the default variant of Mr.ASH
+mr_ash (mr_ash_base):
+  grid:          (2^((0:19)/20) - 1)^2
+
+# This is Mr.Ash with Lasso initialization
+mr_ash_lasso_init (mr_ash_base):  mr_ash_lasso_init.R
+  grid:          (2^((0:19)/20) - 1)^2
 
 # GradVI methods
 # Mr.Ash prior

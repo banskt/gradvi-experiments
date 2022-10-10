@@ -21,11 +21,7 @@ DSC:
   replicate:      10
   define:
     simulate:     blockdiag
-    fit:          ridge, lasso, elastic_net,
-                  lasso_1se, elastic_net_1se,
-                  scad, mcp, l0learn,
-                  susie, varbvs, varbvsmix, blasso, bayesb,
-                  mr_ash, mr_ash_lasso_init,
+    fit:          mr_ash, mr_ash_lasso_init,
                   gradvi_direct, gradvi_compound
     predict:      predict_linear
     score:        mse, coef_mse
@@ -51,7 +47,7 @@ simparams:
 #                (if sequence, length must be equal to number of non-zero coefficients).
 # pve: proportion of variance explained (required for equicorrgauss.py)
   dims:    R{list(c(n=500, p=10000))}
-  sfix:    5, 20
+  sfix:    2, 5, 10, 20
   bfix:    None
   sfrac:   None
   signal:  "normal"
@@ -67,7 +63,7 @@ simparams:
   $se:     sigma
 
 blockdiag(simparams): blockdiag.py
-  pve:     0.6
+  pve:     0.4, 0.6, 0.8
   rholist: [0.9, 0.9, 0.9]
   min_block_size: 1000
 

@@ -1,9 +1,6 @@
 # A DSC for evaluating prediction accuracy of 
 # multiple linear regression methods in different scenarios.
 
-# A DSC for evaluating prediction accuracy of multiple linear regression
-# methods in different scenarios.
-# This is designed to reproduce the results of the manuscript of Mr. Ash by Kim, Wang, Carbonetto and Stephens
 DSC:
   R_libs:         MASS, 
                   glmnet, 
@@ -20,21 +17,16 @@ DSC:
                   modules/fit,
                   modules/predict,
                   modules/score
-  output:         /home/saikatbanerjee/scratch/work/gradvi-experiments/linreg_indep
+  output:         /home/saikatbanerjee/scratch/work/gradvi-experiments/linreg_corr
   replicate:      10
   define:
-    simulate:     equicorrgauss
-    fit:          ridge, lasso, elastic_net,
-                  lasso_1se, elastic_net_1se,
-                  scad, mcp, l0learn,
-                  susie, varbvs, varbvsmix, blasso, bayesb,
-                  mr_ash, mr_ash_lasso_init,
-                  gradvi_direct, gradvi_compound,
-                  gradvi_direct_init, gradvi_compound_init
+    simulate:     blockdiag
+    fit:          mr_ash, mr_ash_lasso_init,
+                  gradvi_direct, gradvi_compound
     predict:      predict_linear
     score:        mse, coef_mse
   run: 
-    linreg:       simulate * fit * predict * score
+    linreg_corr:  simulate * fit * predict * score
 
 
 # simulate modules
@@ -55,7 +47,7 @@ simparams:
 #                (if sequence, length must be equal to number of non-zero coefficients).
 # pve: proportion of variance explained (required for equicorrgauss.py)
   dims:    R{list(c(n=500, p=10000))}
-  sfix:    1, 2, 5, 10, 20
+  sfix:    2, 5, 10, 20
   bfix:    None
   sfrac:   None
   signal:  "normal"
@@ -70,9 +62,10 @@ simparams:
   $beta:   beta
   $se:     sigma
 
-equicorrgauss(simparams): equicorrgauss.py
+blockdiag(simparams): blockdiag.py
   pve:     0.4, 0.6, 0.8
-  rho:     0.0
+  rholist: [0.9, 0.9, 0.9]
+  min_block_size: 1000
 
 # fit modules
 # ===================
@@ -164,18 +157,6 @@ gradvi_direct(fitpy): gradvi_direct.py
 
 
 gradvi_compound(fitpy): gradvi_compound.py
-  ncomp: 20
-  sparsity: None
-  skbase: 2.0
-
-
-gradvi_direct_init(fitpy): gradvi_direct_init.py
-  ncomp: 20
-  sparsity: None
-  skbase: 2.0
-
-
-gradvi_compound_init(fitpy): gradvi_compound_init.py
   ncomp: 20
   sparsity: None
   skbase: 2.0

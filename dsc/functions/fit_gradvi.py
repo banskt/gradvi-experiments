@@ -2,6 +2,7 @@
 import numpy as np
 from gradvi.priors import Ash
 from gradvi.inference import LinearRegression
+from gradvi.optimize import moving_average as gv_moving_average
 
 gradvi_class_properties = [
     '_dj',
@@ -67,6 +68,38 @@ def fit_ash_gradvi(X, y, objtype, ncomp = 20, sparsity = 0.8, skbase = 2.0, bini
 
     else:
         return gvdict, gv.intercept, gv.coef
+
+
+def fit_ash_trendfiltering_gradvi(X, y, objtype, degree = 0, ncomp = 20, sparsity = 0.9, skbase = 20.0, binit = None, s2init = None, winit = None):
+    # initialization
+    n = y.shape[0]
+    prior_init = get_ash_scaled(k = ncomp, sparsity = sparsity, skbase = (degree + 1) * skbase)
+
+    if binit is None:
+        y0 = gv_moving_average.moving_average(y)
+        binit = np.zeros_like(y0)
+    else:
+        y0 = np.dot(X, binit)
+
+    if s2init is None:
+        s2init = np.var(y - y0) / 10.0
+
+    gv0 = LinearRegression(optimize_s = False, maxiter = 1000, obj = 'direct', tol = 1e-7)
+    gv0.fit(X, y, prior_init, b_init = binit, s2_init = s2init)
+
+    # run GradVI
+    prior = get_ash_scaled(k = ncomp, sparsity = sparsity, skbase = (degree + 1) * skbase)
+    gv = LinearRegression(obj = objtype)
+    if objtype == 'direct':
+        gv.fit(X, y, prior, b_init = gv0.coef, s2_init = gv0.residual_var)
+    elif objtype == 'reparametrize':
+        gv.fit(X, y, prior, t_init = gv0.theta, s2_init = gv0.residual_var)
+
+    # convert class to dict    
+    gvdict = class_to_dict(gv, gradvi_class_properties)
+
+    return gvdict, gv.intercept, gv.coef
+
 
 
 ## Backward compatibility

@@ -1,5 +1,7 @@
 import numpy as np
 import collections
+import patsy
+from gradvi.models import basis_matrix as gv_basemat
 
 def parse_input_params(dims, sfrac=0.5, sfix=None):
     n = dims[0]
@@ -184,6 +186,49 @@ def blockdiag_predictors(n0, n1, p, rholist, min_block_size = 100, seed = None, 
         x1 = center_and_scale(x1)
 
     return x0, x1
+
+
+def changepoint_from_bspline (x, knots, std,
+                 degree = 0, signal = "gamma", seed = None,
+                 include_intercept = False, bfix = None,
+                 eps = 1e-8, get_bsplines = False):
+    if seed is not None: np.random.seed(seed)
+    # ------------------------------
+    n = x.shape[0]
+    # ------------------------------
+    # Generate B-spline bases given the knots and degree
+    bspline_bases = patsy.bs(x, knots = knots, degree = degree, include_intercept = include_intercept)
+    nbases = knots.shape[0] + degree + int(include_intercept)
+    assert bspline_bases.shape[1] == nbases, "Number of B-spline bases does not match the number of knots + degree + interecept"
+    # ------------------------------
+    # Generate coefficients for the bases
+    beta  = sample_coefs(nbases, np.arange(nbases), method = signal, bfix = bfix)
+    # ------------------------------
+    # Generate the function without noise 
+    ytrue = np.dot(bspline_bases, beta)
+    # ------------------------------
+    # Map the data to trendfiltering bases
+    # set low values of beta to zero and regenerate y
+    H     = gv_basemat.trendfiltering_scaled(n, degree)
+    Hinv  = gv_basemat.trendfiltering_inverse_scaled(n, degree)
+    btrue = np.dot(Hinv, ytrue)
+    btrue[np.abs(btrue) <= eps] = 0.
+    noise = np.random.normal(0, std, size = n * 2)
+    ytrue = np.dot(H, btrue)
+    y     = ytrue + noise[:n]
+    # ------------------------------
+    # Some test data?
+    ytest = ytrue + noise[n:]
+    # ------------------------------
+    # Signal to noise ratio 
+    # (experimental)
+    signal = np.mean(np.square(btrue[btrue != 0]))
+    snr    = signal / np.square(std)
+    #data   = CData(x = x, y = y, ytest = ytest, ytrue = ytrue, btrue = btrue)
+    #if get_bsplines:
+    #    data = CData(x = x, y = y, ytest = ytest, ytrue = ytrue, btrue = btrue, 
+    #        bspline_bases = bspline_bases, bsp_beta = beta)
+    return H, Hinv, y, ytest, ytrue, btrue, snr
     
 
 def equicorr_predictors_old (n, p, s, pve, ntest = 1000, 

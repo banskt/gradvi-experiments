@@ -23,6 +23,11 @@ def parse_args():
                         required=True,
                         help='Name of DSC output directory')
 
+    parser.add_argument('--changepoint',
+                        dest='is_changepoint',
+                        action='store_true',
+                        help='Flag to target changepoint simulation')
+
     try:
         options = parser.parse_args()
     except:
@@ -38,8 +43,13 @@ dscdir  = os.path.normpath(args.dscdir)
 outfile = os.path.normpath(args.outfile)
 #outfile = "/home/saikatbanerjee/work/sparse-regression/gradvi-experiments/dsc/results/linreg_indep_dscout.pkl"
 
-targets = ["simulate", "simulate.dims", "simulate.se", "simulate.rholist", "simulate.sfix", "simulate.pve", 
-           "fit", "fit.DSC_TIME", "mse.err", "coef_mse.err"]
+if args.is_changepoint:
+    targets = ["simulate", "simulate.n", "simulate.strue", "simulate.snr", "simulate.sfix", "simulate.degree",
+               "fit", "fit.DSC_TIME", "mse.err", "coef_mse.err"]
+else:
+    targets = ["simulate", "simulate.dims", "simulate.se", "simulate.rholist", "simulate.sfix", "simulate.pve", 
+               "fit", "fit.DSC_TIME", "mse.err", "coef_mse.err"]
+
 
 if os.path.isdir(os.path.dirname(outfile)):
     dscout = dscrutils.dscquery(os.path.realpath(dscdir), targets)

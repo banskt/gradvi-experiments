@@ -34,7 +34,7 @@ DSC:
     predict:      predict_linear
     score:        mse, coef_mse
   run: 
-    linreg:       simulate * fit * predict * score
+    linreg:       simulate * initialize * fit * predict * score
 
 
 # simulate modules

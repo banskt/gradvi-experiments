@@ -168,6 +168,18 @@ fit_l0learn <- function (X, y, nfolds = 10) {
   return (list(fit = cvfit$fit, mu = b[1], beta = b[-1]))
 }
 
+# Perform Genlasso trendfiltering
+fit_genlasso_trendfilter <- function(y, order = 1, nfolds = 5, cvlambda = "1se") {
+  out   <- genlasso::trendfilter(y, ord = order)
+  cvout <- genlasso::cv.trendfilter(out, k = nfolds)
+  cvlam <- if (cvlambda == "1se") cvout$lambda.1se else cvout$lambda.min
+  cvidx <- if (cvlambda == "1se") cvout$i.1se else cvout$i.min
+  b     <- coef(out, lambda = cvlam)
+  ypred <- out$fit[, cvidx]
+  return (list(fit = out, mu = 0, beta = as.vector(b$beta),
+               cv = cvout, ypred = ypred, df = b$df))
+}
+
 
 # Fit "Mr.ASH" to the provided data, X and y.
 # X should be an n x p numeric matrix, and y should be a vector of length p
@@ -181,9 +193,10 @@ fit_mr_ash <- function (X, y,
                         init_pi = NULL, init_beta = NULL, init_sigma2 = NULL,
                         update_pi = TRUE, update_sigma2 = TRUE, 
                         update_order = NULL,
+                        intercept = TRUE,
                         tol = list(epstol = 1e-12, convtol = 1e-8)) {
   fit  <- suppressWarnings(mr.ash.alpha::mr.ash(X, y, 
-                                                standardize = FALSE, intercept = TRUE,
+                                                standardize = FALSE, intercept = intercept,
                                                 max.iter = max_iter, sa2 = sa2,
                                                 beta.init = init_beta, 
                                                 update.pi = update_pi, pi = init_pi,

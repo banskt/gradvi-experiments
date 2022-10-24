@@ -1,18 +1,16 @@
 # A DSC for evaluating prediction accuracy of 
 # multiple linear regression methods in different scenarios.
 
-# A DSC for evaluating prediction accuracy of multiple linear regression
-# methods in different scenarios.
-# This is designed to reproduce the results of the manuscript of Mr. Ash by Kim, Wang, Carbonetto and Stephens
 DSC:
   R_libs:         MASS, 
                   glmnet, 
-                  susieR, 
+                  susieR,
                   varbvs >= 2.6-3,
                   mr.ash.alpha,
                   L0Learn,
                   BGLR,
-                  ncvreg
+                  ncvreg,
+                  genlasso
   python_modules: numpy,
                   gradvi
   lib_path:       functions
@@ -20,59 +18,62 @@ DSC:
                   modules/fit,
                   modules/predict,
                   modules/score
-  output:         /home/saikatbanerjee/scratch/work/gradvi-experiments/linreg_indep
+  output:         /home/saikatbanerjee/scratch/work/gradvi-experiments/trendfiltering
   replicate:      10
   define:
-    simulate:     equicorrgauss
-    fit:          ridge, lasso, elastic_net,
-                  lasso_1se, elastic_net_1se,
-                  scad, mcp, l0learn,
-                  susie, varbvs, varbvsmix, blasso, bayesb,
-                  mr_ash, mr_ash_lasso_init,
-                  gradvi_direct, gradvi_compound,
-                  gradvi_direct_init, gradvi_compound_init
+    simulate:     changepoint
+    initialize:   genlasso
+    fit:          mr_ash, mr_ash_lasso_init,
+                  gradvi_direct, gradvi_compound
     predict:      predict_linear
     score:        mse, coef_mse
   run: 
-    linreg:       simulate * fit * predict * score
+    linreg_corr:  simulate * initialize * fit * predict * score
 
 
 # simulate modules
 # ===================
 
-simparams:
-# This is an abstract module for simulation.
+changepoint:      changepoint.py
+# Module for simulation of changepoint data.
 # Input parameters and output data for all simulation designs.
 #
-# sfix:  Number of predictors with non-zero coefficients.
-#        If sfix is not set / None, then the number is calculated dynamically from sfrac.
-# sfrac: Fraction of predictors which have non-zero coefficients
-# signal: distribution of the coefficients for the non-zero predictors
+# sfix: Number of knots in the changepoint
+# degree: Degree of trendfiltering (provided as input, also required in output for next steps)
+#
+# signal: distribution of the coefficients for the changepoint coefficients
 #    - "normal": sample from Gaussian(mean = 0, sd = 1)
 #    - "gamma" : sample from Gamma distribution (k = 40, theta = 0.1) and multiply with random signs
 #    - "fixed":  Use pre-defined value(s) of beta
 #                bfix: sequence / float of predefined beta
 #                (if sequence, length must be equal to number of non-zero coefficients).
-# pve: proportion of variance explained (required for equicorrgauss.py)
-  dims:    R{list(c(n=500, p=10000))}
-  sfix:    1, 2, 5, 10, 20
+#
+# X: basis matrix for regression solution
+# 
   bfix:    None
-  sfrac:   None
   signal:  "normal"
-  ntest:   1000
-  $X:      X
+  n:       1024
+  strue:   0.1
+  sfix:    4, 8, 16
+  order:   0, 1, 2
+  $X:      H
+  $Xinv:   Hinv
   $y:      y
-  $Xtest:  Xtest
   $ytest:  ytest
-  $n:      n
-  $p:      p
-  $s:      s
+  $ytrue:  ytrue
   $beta:   beta
-  $se:     sigma
+  $snr:    snr
+  $degree: order
 
-equicorrgauss(simparams): equicorrgauss.py
-  pve:     0.4, 0.6, 0.8
-  rho:     0.0
+
+# initialize with genlasso
+# ========================
+genlasso:  genlasso_trendfiltering.R
+  y: $y
+  degree: $degree
+  $tf_y: out$ypred
+  $tf_model: out
+
 
 # fit modules
 # ===================
@@ -82,6 +83,7 @@ equicorrgauss(simparams): equicorrgauss.py
 fitR:
   X:          $X
   y:          $y
+  degree:     $degree
   $intercept: out$mu
   $beta_est:  out$beta
   $model:     out
@@ -89,6 +91,7 @@ fitR:
 fitpy:
   X:          $X
   y:          $y
+  degree:     $degree
   $intercept: mu
   $beta_est:  beta
   $model:     model
@@ -103,43 +106,10 @@ ridge (fitR):           ridge.R
 lasso (fitR):           lasso.R
 lasso_1se (fitR):       lasso_1se.R
 
-# Fit an Elastic Net model using glmnet. The model parameters, lambda
-# and alpha, are estimated using cross-validation.
-elastic_net (fitR):     elastic_net.R
-elastic_net_1se (fitR): elastic_net_1se.R
-
-# Fit a "sum of single effects" (SuSiE) regression model.
-susie (fitR):           susie.R
-
-# Compute a fully-factorized variational approximation for Bayesian
-# variable selection in linear regression (varbvs).
-varbvs (fitR):          varbvs.R
-
-# This is a variant on the varbvs method in which the "spike-and-slab"
-# prior on the regression coefficients is replaced with a
-# mixture-of-normals prior.
-varbvsmix (fitR):       varbvsmix.R
-
-
-# Fit using SCAD and MCP penalties
-scad (fitR):            scad.R
-mcp (fitR):             mcp.R
-
-# Fit L0Learn
-l0learn (fitR):         l0learn.R
-
-# Fit Bayesian Lasso
-blasso (fitR):          blasso.R
-
-# Fit BayesB
-bayesb (fitR):          bayesb.R
-
-
 # Fit Mr.ASH
 # This is an abstract base class, which contains all default values.
 # Several variations of Mr.ASH use this abstract base class (see below).
-mr_ash_base (fitR):     mr_ash.R
-  grid:          NULL
+mr_ash_base (fitR): mr_ash_trendfiltering.R
   init_pi:       NULL
   init_beta:     NULL
   init_sigma2:   NULL
@@ -148,37 +118,42 @@ mr_ash_base (fitR):     mr_ash.R
   update_order:  NULL
 
 # This is the default variant of Mr.ASH
-mr_ash (mr_ash_base):
-  grid:          (2^((0:19)/20) - 1)^2
+mr_ash (mr_ash_base): mr_ash_trendfiltering.R
 
 # This is Mr.Ash with Lasso initialization
-mr_ash_lasso_init (mr_ash_base):  mr_ash_lasso_init.R
-  grid:          (2^((0:19)/20) - 1)^2
+mr_ash_lasso_init (mr_ash_base):  mr_ash_genlasso_trendfiltering.R
+  Xinv:          $Xinv
+  yinit:         $tf_y
+
 
 # GradVI methods
 # Mr.Ash prior
-gradvi_direct(fitpy): gradvi_direct.py
+#
+gradvi_trendfiltering(fitpy): gradvi_trendfiltering.py
+  Xinv: $Xinv
+  yinit: None
+  s2init: None
   ncomp: 20
-  sparsity: None
-  skbase: 2.0
+  sparsity: 0.9
+  skbase: 20.0
 
 
-gradvi_compound(fitpy): gradvi_compound.py
-  ncomp: 20
-  sparsity: None
-  skbase: 2.0
+gradvi_direct(gradvi_trendfiltering):
+  objtype: "direct"
 
 
-gradvi_direct_init(fitpy): gradvi_direct_init.py
-  ncomp: 20
-  sparsity: None
-  skbase: 2.0
+gradvi_compound(gradvi_trendfiltering):
+  objtype: "reparametrize"
 
 
-gradvi_compound_init(fitpy): gradvi_compound_init.py
-  ncomp: 20
-  sparsity: None
-  skbase: 2.0
+gradvi_direct_init(gradvi_trendfiltering):
+  objtype: "direct"
+  yinit: $tf_y
+
+
+gradvi_compound_init(gradvi_trendfiltering):
+  objtype: "reparametrize"
+  yinit: $tf_y
 
 
 # predict modules
@@ -190,7 +165,7 @@ gradvi_compound_init(fitpy): gradvi_compound_init.py
 
 # Predict outcomes from a fitted linear regression model.
 predict_linear: predict_linear.R
-  X:         $Xtest
+  X:         $X
   intercept: $intercept
   beta_est:  $beta_est
   $yest:     y   

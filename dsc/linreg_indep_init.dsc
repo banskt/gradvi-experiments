@@ -20,17 +20,14 @@ DSC:
                   modules/fit,
                   modules/predict,
                   modules/score
-  output:         /home/saikatbanerjee/scratch/work/gradvi-experiments/linreg_indep
-  replicate:      10
+  output:         /home/saikatbanerjee/scratch/work/gradvi-experiments/linreg_indep_init
+  replicate:      1
   define:
     simulate:     equicorrgauss
-    fit:          ridge, lasso, elastic_net,
-                  lasso_1se, elastic_net_1se,
-                  scad, mcp, l0learn,
-                  susie, varbvs, varbvsmix, blasso, bayesb,
-                  mr_ash, mr_ash_lasso_init,
+    initialize:   lasso
+    fit:          mr_ash, mr_ash_lasso_init,
                   gradvi_direct, gradvi_compound,
-                  gradvi_direct_init, gradvi_compound_init
+                  gradvi_direct_lasso_init, gradvi_compound_lasso_init
     predict:      predict_linear
     score:        mse, coef_mse
   run: 
@@ -54,8 +51,10 @@ simparams:
 #                bfix: sequence / float of predefined beta
 #                (if sequence, length must be equal to number of non-zero coefficients).
 # pve: proportion of variance explained (required for equicorrgauss.py)
-  dims:    R{list(c(n=500, p=10000))}
-  sfix:    1, 2, 5, 10, 20
+  #dims:    R{list(c(n=500, p=10000))}
+  #sfix:    2, 5, 10, 20
+  dims:    R{list(c(n=500, p=1000))}
+  sfix:    5
   bfix:    None
   sfrac:   None
   signal:  "normal"
@@ -71,8 +70,21 @@ simparams:
   $se:     sigma
 
 equicorrgauss(simparams): equicorrgauss.py
-  pve:     0.4, 0.6, 0.8
+  #pve:     0.4, 0.6, 0.8
+  pve:     0.6
   rho:     0.0
+
+# initialize with lasso
+# =====================
+# Fit a Lasso model using glmnet. The penalty strength ("lambda") is
+# estimated via cross-validation.
+lasso: lasso.R
+  X:               $X
+  y:               $y
+  $init_intercept: out$mu
+  $init_beta:      out$beta
+  $init_sigma2:    out$sigma2
+  $model_init:     out
 
 # fit modules
 # ===================
@@ -93,48 +105,6 @@ fitpy:
   $beta_est:  beta
   $model:     model
 
-# Fit a ridge regression model using glmnet. The penalty strength
-# (i.e., the normal prior on the coefficients) is estimated using
-# cross-validation.
-ridge (fitR):           ridge.R
-  
-# Fit a Lasso model using glmnet. The penalty strength ("lambda") is
-# estimated via cross-validation.
-lasso (fitR):           lasso.R
-lasso_1se (fitR):       lasso_1se.R
-
-# Fit an Elastic Net model using glmnet. The model parameters, lambda
-# and alpha, are estimated using cross-validation.
-elastic_net (fitR):     elastic_net.R
-elastic_net_1se (fitR): elastic_net_1se.R
-
-# Fit a "sum of single effects" (SuSiE) regression model.
-susie (fitR):           susie.R
-
-# Compute a fully-factorized variational approximation for Bayesian
-# variable selection in linear regression (varbvs).
-varbvs (fitR):          varbvs.R
-
-# This is a variant on the varbvs method in which the "spike-and-slab"
-# prior on the regression coefficients is replaced with a
-# mixture-of-normals prior.
-varbvsmix (fitR):       varbvsmix.R
-
-
-# Fit using SCAD and MCP penalties
-scad (fitR):            scad.R
-mcp (fitR):             mcp.R
-
-# Fit L0Learn
-l0learn (fitR):         l0learn.R
-
-# Fit Bayesian Lasso
-blasso (fitR):          blasso.R
-
-# Fit BayesB
-bayesb (fitR):          bayesb.R
-
-
 # Fit Mr.ASH
 # This is an abstract base class, which contains all default values.
 # Several variations of Mr.ASH use this abstract base class (see below).
@@ -152,33 +122,40 @@ mr_ash (mr_ash_base):
   grid:          (2^((0:19)/20) - 1)^2
 
 # This is Mr.Ash with Lasso initialization
-mr_ash_lasso_init (mr_ash_base):  mr_ash_lasso_init.R
+mr_ash_lasso_init (mr_ash_base):
   grid:          (2^((0:19)/20) - 1)^2
+  init_beta:     $init_beta
+  init_sigma2:   $init_sigma2
+
 
 # GradVI methods
 # Mr.Ash prior
-gradvi_direct(fitpy): gradvi_direct.py
+gradvi_base(fitpy): gradvi_ash.py
   ncomp: 20
   sparsity: None
   skbase: 2.0
+  init_beta: None
+  init_sigma2: None
+  init_mixcoef: None
+  run_init: False
 
+gradvi_direct(gradvi_base):
+  objtype: "direct"
 
-gradvi_compound(fitpy): gradvi_compound.py
-  ncomp: 20
-  sparsity: None
-  skbase: 2.0
+gradvi_compound(gradvi_base):
+  objtype: "reparametrize"
 
+gradvi_direct_lasso_init(gradvi_base):
+  objtype:      "direct"
+  init_beta:    $init_beta
+  init_sigma2:  $init_sigma2
+  run_init:     True
 
-gradvi_direct_init(fitpy): gradvi_direct_init.py
-  ncomp: 20
-  sparsity: None
-  skbase: 2.0
-
-
-gradvi_compound_init(fitpy): gradvi_compound_init.py
-  ncomp: 20
-  sparsity: None
-  skbase: 2.0
+gradvi_compound_lasso_init(gradvi_base):
+  objtype:      "reparametrize"
+  init_beta:    $init_beta
+  init_sigma2:  $init_sigma2
+  run_init:     True
 
 
 # predict modules

@@ -28,7 +28,9 @@ fit_lasso <- function (X, y, nfolds = 10, alpha = 1, cvlambda = "min") {
   fit    <- glmnet::glmnet(X, y, alpha = alpha, standardize = FALSE)
   cvs    <- if (cvlambda == "1se") out.cv$lambda.1se else out.cv$lambda.min
   b      <- as.vector(coef(fit, s = cvs))
-  return(list(fit = fit, cv = out.cv, mu = b[1], beta = b[-1]))
+  ypred  <- drop(b[1] + X %*% b[-1])
+  sigma2 <- var(y - ypred)
+  return(list(fit = fit, cv = out.cv, mu = b[1], beta = b[-1], sigma2 = sigma2))
 }
 
 # Fit an Elastic Net model to the data, and estimate the Elastic Net

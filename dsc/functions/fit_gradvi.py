@@ -47,14 +47,29 @@ def get_ash_scaled(k = 20, sparsity = 0.8, skbase = 2.0, **kwargs):
     return get_ash(k = k, sparsity = sparsity, skbase = skbase, is_scaled = True, **kwargs)
 
 
-def fit_ash_gradvi(X, y, objtype, ncomp = 20, sparsity = 0.8, skbase = 2.0, binit = None, s2init = None, winit = None, return_pip = False):
+def fit_ash_gradvi(X, y, objtype, ncomp = 20, sparsity = 0.8, skbase = 2.0, binit = None, s2init = None, winit = None, return_pip = False, run_initialize = False):
     # initialization / prior
     if s2init is None: s2init = 1.0
     prior = get_ash_scaled(k = ncomp, sparsity = sparsity, skbase = skbase)
 
+    # Initialization
+    if run_initialize:
+        # estimate g given b and s2
+        gv0 = LinearRegression(obj = 'direct', optimize_b = False, optimize_s = False, optimize_w = True)
+        gv0.fit(X, y, prior, b_init = binit, s2_init = s2init)
+
+
     # run Gradvi
-    gv = LinearRegression(obj = objtype)
-    gv.fit(X, y, prior, b_init = binit, s2_init = s2init)
+    if run_initialize:
+        # use the previous gv0 fit for initialization
+        gv = LinearRegression(obj = objtype, optimize_b = True, optimize_s = True, optimize_w = True)
+        if objtype == 'direct':
+            gv.fit(X, y, gv0.prior, b_init = gv0.coef,  s2_init = gv0.residual_var)
+        elif objtype == 'reparametrize':
+            gv.fit(X, y, gv0.prior, t_init = gv0.theta, s2_init = gv0.residual_var)
+    else:
+        gv = LinearRegression(obj = objtype)
+        gv.fit(X, y, prior, b_init = binit, s2_init = s2init)
 
     # convert class to dict    
     gvdict = class_to_dict(gv, gradvi_class_properties)

@@ -47,7 +47,7 @@ if args.is_changepoint:
     targets = ["simulate", "simulate.n", "simulate.strue", "simulate.snr", "simulate.sfix", "simulate.degree",
                "fit", "fit.DSC_TIME", "mse.err", "coef_mse.err"]
 else:
-    targets = ["simulate", "simulate.dims", "simulate.se", "simulate.rholist", "simulate.sfix", "simulate.pve", 
+    targets = ["simulate", "simulate.dims", "simulate.se", "simulate.sfix", "simulate.pve",
                "fit", "fit.DSC_TIME", "mse.err", "coef_mse.err"]
 
 

@@ -24,7 +24,8 @@ DSC:
     simulate:     changepoint
     initialize:   genlasso
     fit:          mr_ash, mr_ash_lasso_init,
-                  gradvi_direct, gradvi_compound
+                  gradvi_direct, gradvi_compound,
+                  gradvi_direct_init, gradvi_compound_init
     predict:      predict_linear
     score:        mse, coef_mse
   run: 

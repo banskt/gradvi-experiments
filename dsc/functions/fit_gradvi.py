@@ -85,7 +85,7 @@ def fit_ash_gradvi(X, y, objtype, ncomp = 20, sparsity = 0.8, skbase = 2.0, bini
         return gvdict, gv.intercept, gv.coef
 
 
-def fit_ash_trendfiltering_gradvi(X, y, objtype, degree = 0, ncomp = 20, sparsity = 0.9, skbase = 20.0, binit = None, s2init = None, winit = None):
+def fit_ash_trendfiltering_gradvi(X, y, objtype, degree = 0, ncomp = 20, sparsity = 0.9, skbase = 20.0, binit = None, s2init = None, winit = None, run_initialize = False):
     # initialization
     n = y.shape[0]
     prior_init = get_ash_scaled(k = ncomp, sparsity = sparsity, skbase = (degree + 1) * skbase)
@@ -99,16 +99,18 @@ def fit_ash_trendfiltering_gradvi(X, y, objtype, degree = 0, ncomp = 20, sparsit
     if s2init is None:
         s2init = np.var(y - y0) / 10.0
 
-    gv0 = LinearRegression(optimize_s = False, maxiter = 1000, obj = 'direct', tol = 1e-7)
+    if run_initialize:
+        gv0 = LinearRegression(optimize_s = False, optimize_b = False, maxiter = 1000, obj = 'direct', tol = 1e-7)
+    else:
+        gv0 = LinearRegression(optimize_s = False, maxiter = 1000, obj = 'direct', tol = 1e-7)
     gv0.fit(X, y, prior_init, b_init = binit, s2_init = s2init)
 
     # run GradVI
-    prior = get_ash_scaled(k = ncomp, sparsity = sparsity, skbase = (degree + 1) * skbase)
     gv = LinearRegression(obj = objtype)
     if objtype == 'direct':
-        gv.fit(X, y, prior, b_init = gv0.coef, s2_init = gv0.residual_var)
+        gv.fit(X, y, gv0.prior, b_init = gv0.coef, s2_init = gv0.residual_var)
     elif objtype == 'reparametrize':
-        gv.fit(X, y, prior, t_init = gv0.theta, s2_init = gv0.residual_var)
+        gv.fit(X, y, gv0.prior, t_init = gv0.theta, s2_init = gv0.residual_var)
 
     # convert class to dict    
     gvdict = class_to_dict(gv, gradvi_class_properties)

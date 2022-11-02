@@ -21,7 +21,7 @@ DSC:
                   modules/predict,
                   modules/score
   output:         /home/saikatbanerjee/scratch/work/gradvi-experiments/linreg_indep_init
-  replicate:      1
+  replicate:      10
   define:
     simulate:     equicorrgauss
     initialize:   lasso
@@ -51,10 +51,10 @@ simparams:
 #                bfix: sequence / float of predefined beta
 #                (if sequence, length must be equal to number of non-zero coefficients).
 # pve: proportion of variance explained (required for equicorrgauss.py)
-  #dims:    R{list(c(n=500, p=10000))}
-  #sfix:    2, 5, 10, 20
-  dims:    R{list(c(n=500, p=1000))}
-  sfix:    5
+  dims:    R{list(c(n=500, p=10000))}
+  sfix:    2, 5, 10, 20
+  #dims:    R{list(c(n=500, p=1000))}
+  #sfix:    5
   bfix:    None
   sfrac:   None
   signal:  "normal"
@@ -70,8 +70,8 @@ simparams:
   $se:     sigma
 
 equicorrgauss(simparams): equicorrgauss.py
-  #pve:     0.4, 0.6, 0.8
-  pve:     0.6
+  pve:     0.4, 0.6, 0.8
+  #pve:     0.6
   rho:     0.0
 
 # initialize with lasso

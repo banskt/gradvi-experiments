@@ -2,13 +2,12 @@
 
 from fit_gradvi import fit_ash_trendfiltering_gradvi
 
-if yinit is not None:
-    binit = np.dot(Xinv, yinit)
-    run_init = True
+if scale_grid:
+    skfactor = (degree + 1) * 20.0
 else:
-    binit = None
-    run_init = False
+    skfactor = 1.0
 
-model, mu, beta = fit_ash_trendfiltering_gradvi(X, y, objtype,
-                    degree = degree, ncomp = ncomp, sparsity = sparsity, skbase = skbase,
-                    binit = binit, s2init = s2init, run_initialize = run_init)
+model, mu, beta, ypred = fit_ash_trendfiltering_gradvi(y, objtype, degree = degree, maxiter = 20000,
+                    ncomp = ncomp, sparsity = sparsity, skbase = skbase, skfactor = skfactor,
+                    yinit = yinit, s2init = s2init, run_initialize = False, # this is a separate initialization for theta
+                    standardize_basis = standardize_basis, scale_basis = scale_basis, standardize = True)

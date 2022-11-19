@@ -19,17 +19,19 @@ DSC:
                   modules/predict,
                   modules/score
   output:         /home/saikatbanerjee/scratch/work/gradvi-experiments/trendfiltering
+  #output:         /home/saikatbanerjee/scratch/work/gradvi-experiments/trendfiltering_trial
   replicate:      10
   define:
     simulate:     changepoint
     initialize:   genlasso
-    fit:          mr_ash, mr_ash_lasso_init,
-                  gradvi_direct, gradvi_compound,
-                  gradvi_direct_init, gradvi_compound_init
-    predict:      predict_linear
-    score:        mse, coef_mse
+    fit:          mr_ash, mr_ash_init,
+                  mr_ash_scaled, mr_ash_scaled_init,
+                  gradvi_direct, gradvi_direct_init,
+                  gradvi_compound, gradvi_compound_init,
+                  gradvi_compound_scaled, gradvi_compound_scaled_init
+    score:        tfmse, tfmae
   run: 
-    linreg_corr:  simulate * initialize * fit * predict * score
+    linreg_corr:  simulate * initialize * fit * score
 
 
 # simulate modules
@@ -56,15 +58,19 @@ changepoint:      changepoint.py
   n:       1024
   strue:   0.1
   sfix:    4, 8, 16
-  order:   0, 1, 2
+  dtrue:   0, 1, 2
+  #sfix:    4
+  #dtrue:  1
   $X:      H
   $Xinv:   Hinv
+  $Xscale: Hscale
+  $Xinvscale: Hinvscale
   $y:      y
   $ytest:  ytest
   $ytrue:  ytrue
   $beta:   beta
   $snr:    snr
-  $degree: order
+  $degree: dtrue
 
 
 # initialize with genlasso
@@ -82,30 +88,16 @@ genlasso:  genlasso_trendfiltering.R
 # Extra inputs and outputs can be specified in 
 # respective submodules.
 fitR:
-  X:          $X
   y:          $y
   degree:     $degree
-  $intercept: out$mu
-  $beta_est:  out$beta
+  $ypred:     out$ypred
   $model:     out
 
 fitpy:
-  X:          $X
   y:          $y
   degree:     $degree
-  $intercept: mu
-  $beta_est:  beta
+  $ypred:     ypred
   $model:     model
-
-# Fit a ridge regression model using glmnet. The penalty strength
-# (i.e., the normal prior on the coefficients) is estimated using
-# cross-validation.
-ridge (fitR):           ridge.R
-  
-# Fit a Lasso model using glmnet. The penalty strength ("lambda") is
-# estimated via cross-validation.
-lasso (fitR):           lasso.R
-lasso_1se (fitR):       lasso_1se.R
 
 # Fit Mr.ASH
 # This is an abstract base class, which contains all default values.
@@ -117,18 +109,31 @@ mr_ash_base (fitR): mr_ash_trendfiltering.R
   update_pi:     TRUE
   update_sigma2: TRUE
   update_order:  NULL
+  grid:          (2^((0:19)/20) - 1)^2
+  scale_grid:    TRUE
 
 # This is the default variant of Mr.ASH
 mr_ash (mr_ash_base): mr_ash_trendfiltering.R
+  X: $X
 
+mr_ash_scaled (mr_ash_base): mr_ash_trendfiltering.R
+  X: $Xscale
+  
 # This is Mr.Ash with Lasso initialization
-mr_ash_lasso_init (mr_ash_base):  mr_ash_genlasso_trendfiltering.R
-  Xinv:          $Xinv
-  yinit:         $tf_y
+mr_ash_init (mr_ash_base):  mr_ash_genlasso_trendfiltering.R
+  X:     $X
+  Xinv:  $Xinv
+  yinit: $tf_y
+
+
+mr_ash_scaled_init (mr_ash_base): mr_ash_genlasso_trendfiltering.R
+  X:     $Xscale
+  Xinv:  $Xinvscale
+  yinit: $tf_y
 
 
 # GradVI methods
-# Mr.Ash prior
+# Mr.Ash (unscaled) prior
 #
 gradvi_trendfiltering(fitpy): gradvi_trendfiltering.py
   Xinv: $Xinv
@@ -136,20 +141,30 @@ gradvi_trendfiltering(fitpy): gradvi_trendfiltering.py
   s2init: None
   ncomp: 20
   sparsity: 0.9
-  skbase: 20.0
+  skbase: 2.0
+  scale_grid: True
+  scale_basis: False
+  standardize_basis: False
 
 
 gradvi_direct(gradvi_trendfiltering):
   objtype: "direct"
+  standardize_basis: True
+
+
+gradvi_direct_init(gradvi_trendfiltering):
+  objtype: "direct"
+  yinit: $tf_y
+  standardize_basis: True
 
 
 gradvi_compound(gradvi_trendfiltering):
   objtype: "reparametrize"
 
 
-gradvi_direct_init(gradvi_trendfiltering):
-  objtype: "direct"
-  yinit: $tf_y
+gradvi_compound_scaled(gradvi_trendfiltering):
+  objtype: "reparametrize"
+  standardize_basis: True
 
 
 gradvi_compound_init(gradvi_trendfiltering):
@@ -157,19 +172,10 @@ gradvi_compound_init(gradvi_trendfiltering):
   yinit: $tf_y
 
 
-# predict modules
-# ===============
-# A "predict" module takes as input a fitted model (or the parameters
-# of this fitted model) and an n x p matrix of observations, X, and
-# returns a vector of length n containing the outcomes predicted by
-# the fitted model.
-
-# Predict outcomes from a fitted linear regression model.
-predict_linear: predict_linear.R
-  X:         $X
-  intercept: $intercept
-  beta_est:  $beta_est
-  $yest:     y   
+gradvi_compound_scaled_init(gradvi_trendfiltering):
+  objtype: "reparametrize"
+  yinit: $tf_y
+  standardize_basis: True
 
 
 # score modules
@@ -180,24 +186,14 @@ predict_linear: predict_linear.R
 
 # Compute the mean squared error summarizing the differences between
 # the predicted outcomes and the true outcomes.
-mse: mse.R
-  y:    $ytest
-  yest: $yest
+tfmse: mse.R
+  y:    $ytrue
+  yest: $ypred
   $err: err 
 
 # Compute the mean absolute error summarizing the differences between
 # the predicted outcomes and the true outcomes.
-mae: mae.R
-  y:    $ytest
-  yest: $yest
+tfmae: mae.R
+  y:    $ytrue
+  yest: $ypred
   $err: err 
-
-coef_mse: coef_mse.R
-  beta:     $beta
-  beta_est: $beta_est
-  $err: err
-
-coef_mae: coef_mae.R
-  beta:     $beta
-  beta_est: $beta_est
-  $err: err

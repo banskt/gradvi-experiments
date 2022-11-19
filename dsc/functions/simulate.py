@@ -209,8 +209,10 @@ def changepoint_from_bspline (x, knots, std,
     # ------------------------------
     # Map the data to trendfiltering bases
     # set low values of beta to zero and regenerate y
-    H     = gv_basemat.trendfiltering_scaled(n, degree)
-    Hinv  = gv_basemat.trendfiltering_inverse_scaled(n, degree)
+    H     = gv_basemat.trendfiltering(n, degree)
+    Hinv  = gv_basemat.trendfiltering_inverse(n, degree)
+    Hscale     = gv_basemat.trendfiltering_scaled(n, degree)
+    Hinvscale  = gv_basemat.trendfiltering_inverse_scaled(n, degree)
     btrue = np.dot(Hinv, ytrue)
     btrue[np.abs(btrue) <= eps] = 0.
     noise = np.random.normal(0, std, size = n * 2)
@@ -224,11 +226,8 @@ def changepoint_from_bspline (x, knots, std,
     # (experimental)
     signal = np.mean(np.square(btrue[btrue != 0]))
     snr    = signal / np.square(std)
-    #data   = CData(x = x, y = y, ytest = ytest, ytrue = ytrue, btrue = btrue)
-    #if get_bsplines:
-    #    data = CData(x = x, y = y, ytest = ytest, ytrue = ytrue, btrue = btrue, 
-    #        bspline_bases = bspline_bases, bsp_beta = beta)
-    return H, Hinv, y, ytest, ytrue, btrue, snr
+    #
+    return H, Hinv, Hscale, Hinvscale, y, ytest, ytrue, btrue, snr
     
 
 def equicorr_predictors_old (n, p, s, pve, ntest = 1000, 

@@ -28,6 +28,11 @@ def parse_args():
                         action='store_true',
                         help='Flag to target changepoint simulation')
 
+    parser.add_argument('--changepoint-accuracy',
+                        dest='is_changepoint_accuracy',
+                        action='store_true',
+                        help='Flag to target changepoint accuracy simulation')
+
     try:
         options = parser.parse_args()
     except:
@@ -43,9 +48,12 @@ dscdir  = os.path.normpath(args.dscdir)
 outfile = os.path.normpath(args.outfile)
 #outfile = "/home/saikatbanerjee/work/sparse-regression/gradvi-experiments/dsc/results/linreg_indep_dscout.pkl"
 
-if args.is_changepoint:
-    targets = ["simulate", "simulate.n", "simulate.strue", "simulate.snr", "simulate.sfix", "simulate.degree",
-               "fit", "fit.DSC_TIME", "mse.err", "coef_mse.err"]
+if args.is_changepoint_accuracy:
+    targets = ["simulate", "simulate.n", "simulate.strue", "simulate.snr", "simulate.sfix", "simulate.dtrue",
+               "fit", "fit.DSC_TIME", "tfmse.err", "tfmse.init_err", "tfmae.err", "tfmae.init_err"]
+elif args.is_changepoint:
+    targets = ["simulate", "simulate.n", "simulate.strue", "simulate.snr", "simulate.sfix", "simulate.dtrue",
+               "fit", "fit.DSC_TIME", "tfmse.err", "tfmae.err"]
 else:
     targets = ["simulate", "simulate.dims", "simulate.se", "simulate.sfix", "simulate.pve",
                "fit", "fit.DSC_TIME", "mse.err", "coef_mse.err"]

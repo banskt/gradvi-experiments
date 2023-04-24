@@ -2,12 +2,8 @@
 # multiple linear regression methods in different scenarios.
 
 DSC:
-  R_libs:         MASS, 
-                  glmnet, 
-                  varbvs >= 2.6-3,
+  R_libs:         glmnet, 
                   mr.ash.alpha,
-                  BGLR,
-                  ncvreg,
                   genlasso
   python_modules: numpy,
                   gradvi
@@ -17,8 +13,9 @@ DSC:
                   modules/fit,
                   modules/predict,
                   modules/score
-  output:         /home/saikatbanerjee/scratch/work/gradvi-experiments/trendfiltering_runtime
-  replicate:      1
+  #output:         /home/saikatbanerjee/scratch/work/gradvi-experiments/trendfiltering_runtime
+  output:         /home/saikat/Documents/work/sparse-regression/mr-ash-penalized/gradvi-experiments/dsc/results/trendfiltering_runtime
+  replicate:      10
   define:
     simulate:     changepoint
     initialize:   gvma
@@ -49,7 +46,7 @@ changepoint:      changepoint.py
 # 
   bfix:    None
   signal:  "normal"
-  n:       1000, 10000
+  n:       1000, 10000, 100000, 1000000
   strue:   0.6
   sfix:    10
   dtrue:   0

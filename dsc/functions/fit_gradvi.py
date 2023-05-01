@@ -19,7 +19,6 @@ gradvi_class_properties = [
     '_opts',
     'coef',
     'elbo_path',
-    'fitobj',
     'fun',
     'grad',
     'intercept',

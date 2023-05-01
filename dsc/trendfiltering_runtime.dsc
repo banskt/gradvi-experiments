@@ -13,8 +13,7 @@ DSC:
                   modules/fit,
                   modules/predict,
                   modules/score
-  #output:         /home/saikatbanerjee/scratch/work/gradvi-experiments/trendfiltering_runtime
-  output:         /home/saikat/Documents/work/sparse-regression/mr-ash-penalized/gradvi-experiments/dsc/results/trendfiltering_runtime
+  output:         /gpfs/commons/groups/knowles_lab/sbanerjee/sparse-regression/gradvi-experiments/trendfiltering_runtime
   replicate:      10
   define:
     simulate:     changepoint
@@ -46,7 +45,7 @@ changepoint:      changepoint.py
 # 
   bfix:    None
   signal:  "normal"
-  n:       1000, 10000, 100000, 1000000
+  n:       100, 1000, 10000, 100000
   strue:   0.6
   sfix:    10
   dtrue:   0

@@ -13,12 +13,13 @@ DSC:
                   modules/fit,
                   modules/predict,
                   modules/score
-  output:         /gpfs/commons/groups/knowles_lab/sbanerjee/sparse-regression/gradvi-experiments/trendfiltering_runtime
+  #output:         /gpfs/commons/groups/knowles_lab/sbanerjee/sparse-regression/gradvi-experiments/trendfiltering_runtime
+  output:         /gpfs/commons/groups/knowles_lab/sbanerjee/sparse-regression/gradvi-experiments/trendfiltering_runtime_lowmem
   replicate:      10
   define:
-    simulate:     changepoint
+    simulate:     changepoint_lowmem
     initialize:   gvma
-    fit:          genlasso, mr_ash, gradvi_compound
+    fit:          genlasso, gradvi_compound
     score:        tfmse, tfmae
   run:
     linreg_corr:  simulate * initialize * fit * score
@@ -45,7 +46,7 @@ changepoint:      changepoint.py
 # 
   bfix:    None
   signal:  "normal"
-  n:       100, 1000, 10000, 100000
+  n:       100, 1000, 10000
   strue:   0.6
   sfix:    10
   dtrue:   0
@@ -59,6 +60,10 @@ changepoint:      changepoint.py
   $beta:   beta
   $snr:    snr
   $degree: dtrue
+
+
+changepoint_lowmem (changepoint): changepoint_lowmem.py
+  n: 100000, 1000000 
 
 
 # initialize with gvma

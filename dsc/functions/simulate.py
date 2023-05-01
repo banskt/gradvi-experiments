@@ -228,6 +228,42 @@ def changepoint_from_bspline (x, knots, std,
     snr    = signal / np.square(std)
     #
     return H, Hinv, Hscale, Hinvscale, y, ytest, ytrue, btrue, snr
+
+
+def changepoint_from_btrue (x, sfix, std,
+                 degree = 0, signal = "gamma", signal_params = {}, 
+                 seed = None,
+                 include_intercept = False, bfix = None,
+                 eps = 1e-8):
+    if seed is not None: np.random.seed(seed)
+    n = x.shape[0]
+    bidx  = np.floor(np.linspace(0, n, sfix + 2)[1:-1]).astype(int)
+    btrue = sample_coefs(n, bidx, method = signal, bfix = bfix, options = signal_params)
+    ytrue = Hdotv_unscaled(btrue, degree)
+    noise = np.random.normal(0, std, size = n * 2)
+    y     = ytrue + noise[:n]
+    ytest = ytrue + noise[n:]
+    signal = np.mean(np.square(btrue[btrue != 0]))
+    snr    = signal / np.square(std)
+    Xdummy = np.zeros((2,2))
+    return Xdummy, Xdummy, Xdummy, Xdummy, y, ytest, ytrue, btrue, snr
+
+
+def Hdotv_unscaled(v, d):
+    X3v1 = np.zeros_like(v)
+    v0 = v[:d]
+    v1 = v[d:]
+    X3v1[d:] = np.cumsum(v1)
+    for i in range(d):
+        X3v1 = np.cumsum(X3v1)
+    if d == 0:
+        Xv = X3v1
+    elif d == 1:
+        Xv = v[0] + X3v1
+    else:
+        X0v0 = np.dot(self._tf_X[:, :d], v0)
+        Xv = X0v0 + X3v1
+    return Xv
     
 
 def equicorr_predictors_old (n, p, s, pve, ntest = 1000, 

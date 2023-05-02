@@ -14,12 +14,12 @@ DSC:
                   modules/predict,
                   modules/score
   #output:         /gpfs/commons/groups/knowles_lab/sbanerjee/sparse-regression/gradvi-experiments/trendfiltering_runtime
-  output:         /gpfs/commons/groups/knowles_lab/sbanerjee/sparse-regression/gradvi-experiments/trendfiltering_runtime_lowmem
-  replicate:      10
+  output:         /gpfs/commons/groups/knowles_lab/sbanerjee/sparse-regression/gradvi-experiments/trendfiltering_runtime_lowmem_trial
+  replicate:      1
   define:
     simulate:     changepoint_lowmem
     initialize:   gvma
-    fit:          genlasso, gradvi_compound
+    fit:          gradvi_compound, genlasso
     score:        tfmse, tfmae
   run:
     linreg_corr:  simulate * initialize * fit * score

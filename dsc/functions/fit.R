@@ -172,12 +172,16 @@ fit_l0learn <- function (X, y, nfolds = 10) {
 
 # Perform Genlasso trendfiltering
 fit_genlasso_trendfilter <- function(y, order = 1, nfolds = 5, cvlambda = "1se") {
+  start_time <- proc.time()
   out   <- genlasso::trendfilter(y, ord = order)
   cvout <- genlasso::cv.trendfilter(out, k = nfolds)
   cvlam <- if (cvlambda == "1se") cvout$lambda.1se else cvout$lambda.min
   cvidx <- if (cvlambda == "1se") cvout$i.1se else cvout$i.min
   b     <- coef(out, lambda = cvlam)
   ypred <- out$fit[, cvidx]
+  end_time <- proc.time()
+  out$runtime_wall <- end_time[3] - start_time[3]
+  out$runtime_cpu  <- end_time[1] - start_time[1]
   return (list(fit = out, mu = 0, beta = as.vector(b$beta),
                cv = cvout, ypred = ypred, df = b$df))
 }
@@ -197,6 +201,8 @@ fit_mr_ash <- function (X, y,
                         update_order = NULL,
                         intercept = TRUE,
                         tol = list(epstol = 1e-12, convtol = 1e-8)) {
+
+  start_time <- proc.time()
   fit  <- suppressWarnings(mr.ash.alpha::mr.ash(X, y, 
                                                 standardize = FALSE, intercept = intercept,
                                                 max.iter = max_iter, sa2 = sa2,
@@ -205,5 +211,8 @@ fit_mr_ash <- function (X, y,
                                                 update.sigma2 = update_sigma2, sigma2 = init_sigma2,
                                                 update.order = update_order,
                                                 tol = tol))
+  end_time <- proc.time()
+  fit$runtime_wall <- end_time[3] - start_time[3]
+  fit$runtime_cpu  <- end_time[1] - start_time[1]
   return(list(fit = fit,mu = fit$intercept, beta = fit$beta))
 }

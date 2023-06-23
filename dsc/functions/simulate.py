@@ -234,6 +234,7 @@ def changepoint_from_btrue (x, sfix, std,
                  degree = 0, signal = "gamma", signal_params = {}, 
                  seed = None,
                  include_intercept = False, bfix = None,
+                 dummy = False,
                  eps = 1e-8):
     if seed is not None: np.random.seed(seed)
     n = x.shape[0]
@@ -246,7 +247,14 @@ def changepoint_from_btrue (x, sfix, std,
     signal = np.mean(np.square(btrue[btrue != 0]))
     snr    = signal / np.square(std)
     Xdummy = np.zeros((2,2))
-    return Xdummy, Xdummy, Xdummy, Xdummy, y, ytest, ytrue, btrue, snr
+    if dummy:
+        return Xdummy, Xdummy, Xdummy, Xdummy, y, ytest, ytrue, btrue, snr
+    else:
+        H     = gv_basemat.trendfiltering(n, degree)
+        Hinv  = gv_basemat.trendfiltering_inverse(n, degree)
+        Hscale     = gv_basemat.trendfiltering_scaled(n, degree)
+        Hinvscale  = gv_basemat.trendfiltering_inverse_scaled(n, degree)
+        return H, Hinv, Hscale, Hinvscale, y, ytest, ytrue, btrue, snr
 
 
 def Hdotv_unscaled(v, d):

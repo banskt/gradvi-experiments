@@ -1,5 +1,6 @@
 #
 import numpy as np
+import time
 from gradvi.priors import Ash
 from gradvi.inference import LinearRegression
 from gradvi.inference import Trendfiltering
@@ -58,6 +59,11 @@ def get_ash_scaled(k = 20, sparsity = 0.8, skbase = 2.0, skfactor = 1.0, **kwarg
 
 
 def fit_ash_gradvi(X, y, objtype, ncomp = 20, sparsity = 0.8, skbase = 2.0, skfactor = 1.0, binit = None, s2init = None, winit = None, return_pip = False, run_initialize = False):
+
+    # Start time
+    stwall = time.time()
+    stcpu  = time.process_time()
+
     # initialization / prior
     if s2init is None: s2init = 1.0
     prior = get_ash_scaled(k = ncomp, sparsity = sparsity, skbase = skbase, skfactor = skfactor)
@@ -81,8 +87,16 @@ def fit_ash_gradvi(X, y, objtype, ncomp = 20, sparsity = 0.8, skbase = 2.0, skfa
         gv = LinearRegression(obj = objtype)
         gv.fit(X, y, prior, b_init = binit, s2_init = s2init)
 
+    # End time
+    etwall = time.time()
+    etcpu  = time.process_time()
+    runtime_wall = etwall - stwall
+    runtime_cpu  = etcpu  - stcpu
+
     # convert class to dict    
     gvdict = class_to_dict(gv, gradvi_class_properties)
+    gvdict["runtime_wall"] = runtime_wall
+    gvdict["runtime_cpu"]  = runtime_cpu
 
     # get NormalMeans
     if return_pip:
@@ -98,6 +112,10 @@ def fit_ash_gradvi(X, y, objtype, ncomp = 20, sparsity = 0.8, skbase = 2.0, skfa
 def fit_ash_trendfiltering_gradvi(y, objtype, degree = 0, ncomp = 20, sparsity = 0.9, skbase = 2.0, skfactor = 1.0, 
                                   yinit = None, s2init = None, winit = None, run_initialize = False,
                                   standardize_basis = False, scale_basis = False, standardize = True, maxiter = 10000):
+    # Start time
+    stwall = time.time()
+    stcpu  = time.process_time()
+
     # initialization
     n = y.shape[0]
     prior_init = get_ash(k = ncomp, sparsity = sparsity, skbase = skbase, skfactor = skfactor)
@@ -105,8 +123,16 @@ def fit_ash_trendfiltering_gradvi(y, objtype, degree = 0, ncomp = 20, sparsity =
     gv = Trendfiltering(obj = objtype, maxiter = maxiter, scale_basis = scale_basis, standardize = standardize)
     gv.fit(y, degree, prior_init, y_init = yinit, s2_init = s2init)
 
+    # End time
+    etwall = time.time()
+    etcpu  = time.process_time()
+    runtime_wall = etwall - stwall
+    runtime_cpu  = etcpu  - stcpu
+
     # convert class to dict    
     gvdict = class_to_dict(gv, gradvi_trendfiltering_class_properties)
+    gvdict["runtime_wall"] = runtime_wall
+    gvdict["runtime_cpu"]  = runtime_cpu
 
     return gvdict, gv.intercept, gv.coef, gv.ypred
 

@@ -2,14 +2,8 @@
 # multiple linear regression methods in different scenarios.
 
 DSC:
-  R_libs:         MASS, 
-                  glmnet, 
-                  susieR, 
-                  varbvs >= 2.6-3,
+  R_libs:         glmnet, 
                   mr.ash.alpha,
-                  L0Learn,
-                  BGLR,
-                  ncvreg
   python_modules: numpy,
                   gradvi
   lib_path:       functions
@@ -17,7 +11,7 @@ DSC:
                   modules/fit,
                   modules/predict,
                   modules/score
-  output:         /home/saikatbanerjee/scratch/work/gradvi-experiments/linreg_corr_init
+  output:         /gpfs/commons/groups/knowles_lab/sbanerjee/sparse-regression/gradvi-experiments/linreg_blockdiag
   replicate:      10
   define:
     simulate:     blockdiag
@@ -49,9 +43,7 @@ simparams:
 #                (if sequence, length must be equal to number of non-zero coefficients).
 # pve: proportion of variance explained (required for equicorrgauss.py)
   dims:    R{list(c(n=500, p=10000))}
-  sfix:    2, 5, 10, 20
-  #dims:    R{list(c(n=500, p=10000))}
-  #sfix:    5
+  sfix:    5, 10, 20, 250
   bfix:    None
   sfrac:   None
   signal:  "normal"
@@ -68,8 +60,7 @@ simparams:
 
 blockdiag(simparams): blockdiag.py
   pve:     0.4, 0.6, 0.8 
-  #pve:     0.6
-  rholist: [0.9, 0.9, 0.9]
+  rholist: [0.95, 0.95, 0.95]
   min_block_size: 1000
 
 # initialize with lasso

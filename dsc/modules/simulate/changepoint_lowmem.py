@@ -8,4 +8,5 @@ H, Hinv, Hscale, Hinvscale, y, ytest, ytrue, beta, snr = \
     simulate.changepoint_from_btrue(
         x, sfix, strue, degree = dtrue,
         signal = signal, include_intercept = False,
+        dummy = lowmem,
         bfix = bfix, seed = None)

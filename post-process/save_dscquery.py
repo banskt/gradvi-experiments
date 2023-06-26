@@ -44,9 +44,9 @@ def parse_args():
 args = parse_args()
 
 dscdir  = os.path.normpath(args.dscdir)
-#dscdir = "/home/saikatbanerjee/scratch/work/gradvi-experiments/linreg_indep"
+#dscdir = "/gpfs/commons/groups/knowles_lab/sbanerjee/sparse-regression/gradvi-experiments/linreg_indep"
 outfile = os.path.normpath(args.outfile)
-#outfile = "/home/saikatbanerjee/work/sparse-regression/gradvi-experiments/dsc/results/linreg_indep_dscout.pkl"
+#outfile = "/gpfs/commons/home/sbanerjee/work/sparse-regression/gradvi-experiments/dsc/results/linreg_indep_dscout.pkl"
 
 if args.is_changepoint_accuracy:
     targets = ["simulate", "simulate.n", "simulate.strue", "simulate.snr", "simulate.sfix", "simulate.dtrue",

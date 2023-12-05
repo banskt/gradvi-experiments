@@ -52,9 +52,9 @@ changepoint:      changepoint_lowmem.py
   bfix:    None
   signal:  "normal"
   n:       4096
-  strue:   0.6
+  snr:     5.0
   sfix:    10
-  dtrue:   0, 1
+  dtrue:   0
   lowmem:  False
   $X:      H
   $Xinv:   Hinv
@@ -64,7 +64,7 @@ changepoint:      changepoint_lowmem.py
   $ytest:  ytest
   $ytrue:  ytrue
   $beta:   beta
-  $snr:    snr
+  $strue:  std
   $degree: dtrue
 
 
@@ -144,6 +144,8 @@ gradvi_trendfiltering(fitpy): gradvi_trendfiltering.py
   scale_grid: True
   scale_basis: False
   standardize_basis: False
+  maxiter: 2000
+  get_mrash_elbo: True
 
 
 # Do not run this in pipeline, 

@@ -6,6 +6,10 @@ from gradvi.inference import LinearRegression
 from gradvi.inference import Trendfiltering
 from gradvi.optimize import moving_average as gv_moving_average
 
+# Used for ELBO calculation
+from gradvi.models import basis_matrix as gv_basemat
+from mrashpen.inference.mrash_wrapR import MrASHR
+
 gradvi_class_properties = [
     '_dj',
     '_init_params',
@@ -110,8 +114,9 @@ def fit_ash_gradvi(X, y, objtype, ncomp = 20, sparsity = 0.8, skbase = 2.0, skfa
 
 
 def fit_ash_trendfiltering_gradvi(y, objtype, degree = 0, ncomp = 20, sparsity = 0.9, skbase = 2.0, skfactor = 1.0, 
-                                  yinit = None, s2init = None, winit = None, run_initialize = False,
-                                  standardize_basis = False, scale_basis = False, standardize = True, maxiter = 10000):
+                                  yinit = None, s2init = None, winit = None, run_initialize = False, tol = 1e-8,
+                                  standardize_basis = False, scale_basis = False, standardize = True, maxiter = 2000,
+                                  return_mrash_elbo = False):
     # Start time
     stwall = time.time()
     stcpu  = time.process_time()
@@ -120,7 +125,10 @@ def fit_ash_trendfiltering_gradvi(y, objtype, degree = 0, ncomp = 20, sparsity =
     n = y.shape[0]
     prior_init = get_ash(k = ncomp, sparsity = sparsity, skbase = skbase, skfactor = skfactor)
 
-    gv = Trendfiltering(obj = objtype, maxiter = maxiter, scale_basis = scale_basis, standardize = standardize)
+    gv = Trendfiltering(
+            obj = objtype, maxiter = maxiter, tol = tol, 
+            standardize_basis = standardize_basis, scale_basis = scale_basis, 
+            standardize = standardize)
     gv.fit(y, degree, prior_init, y_init = yinit, s2_init = s2init)
 
     # End time
@@ -133,10 +141,34 @@ def fit_ash_trendfiltering_gradvi(y, objtype, degree = 0, ncomp = 20, sparsity =
     gvdict = class_to_dict(gv, gradvi_trendfiltering_class_properties)
     gvdict["runtime_wall"] = runtime_wall
     gvdict["runtime_cpu"]  = runtime_cpu
+    if return_mrash_elbo:
+        gvdict["elbo"] = get_elbo_from_mrash(gv, y)
 
     return gvdict, gv.intercept, gv.coef, gv.ypred
 
 
+def get_elbo_from_mrash(gvcls, y):
+    n = y.shape[0]
+    degree = gvcls._tf_degree
+    prior_sk = gvcls.prior.sk
+    prior_wk = gvcls.prior.w
+    y_opt = gvcls.ypred
+    s2_opt = gvcls.residual_var
+    
+    X = gv_basemat.trendfiltering(n, degree)
+    Xinv = gv_basemat.trendfiltering_inverse(n, degree)
+    b_opt = np.dot(Xinv, y_opt)
+    
+    # Run Mr.Ash
+    mrash_r = MrASHR(option = "rds")
+    mrash_r.fit(X, y, prior_sk,
+                binit = b_opt,
+                winit = prior_wk,
+                s2init = s2_opt,
+                maxiter = 1,
+                update_pi = False, 
+                update_sigma2 = False)
+    return mrash_r.elbo_path[0]
 
 ## Backward compatibility
 def fit_mrash_gradvi_direct(X, y, ncomp = 20, sparsity = 0.8, skbase = 2.0, binit = None, s2init = None, winit = None):

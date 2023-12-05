@@ -47,8 +47,8 @@ def get_truncated_list(ylist, ylim = None, d = 0.04):
 def compare_methods_with_boxplots(
         ax, df, targets,
         xcol = 'simulate.pve', 
-        remove_outliers = True,
-        is_truncate = True,
+        remove_outliers = False,
+        is_truncate = False,
         outlier_factor = 1.4, 
         ylim = None):
 

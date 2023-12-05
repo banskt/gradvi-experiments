@@ -49,10 +49,10 @@ outfile = os.path.normpath(args.outfile)
 #outfile = "/gpfs/commons/home/sbanerjee/work/sparse-regression/gradvi-experiments/dsc/results/linreg_indep_dscout.pkl"
 
 if args.is_changepoint_accuracy:
-    targets = ["simulate", "simulate.n", "simulate.strue", "simulate.snr", "simulate.sfix", "simulate.dtrue",
+    targets = ["simulate", "simulate.n", "simulate.snr", "simulate.sfix", "simulate.dtrue",
                "fit", "fit.DSC_TIME", "tfmse.err", "tfmse.init_err", "tfmae.err", "tfmae.init_err"]
 elif args.is_changepoint:
-    targets = ["simulate", "simulate.n", "simulate.strue", "simulate.snr", "simulate.sfix", "simulate.dtrue",
+    targets = ["simulate", "simulate.n", "simulate.snr", "simulate.sfix", "simulate.dtrue",
                "fit", "fit.DSC_TIME", "tfmse.err", "tfmae.err"]
 else:
     targets = ["simulate", "simulate.dims", "simulate.se", "simulate.sfix", "simulate.pve",

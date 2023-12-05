@@ -188,117 +188,175 @@ def blockdiag_predictors(n0, n1, p, rholist, min_block_size = 100, seed = None, 
     return x0, x1
 
 
-def changepoint_from_bspline (x, knots, std,
-                 degree = 0, signal = "gamma", seed = None,
-                 include_intercept = False, bfix = None,
-                 eps = 1e-8, get_bsplines = False):
-    if seed is not None: np.random.seed(seed)
-    # ------------------------------
-    n = x.shape[0]
-    # ------------------------------
-    # Generate B-spline bases given the knots and degree
-    bspline_bases = patsy.bs(x, knots = knots, degree = degree, include_intercept = include_intercept)
-    nbases = knots.shape[0] + degree + int(include_intercept)
-    assert bspline_bases.shape[1] == nbases, "Number of B-spline bases does not match the number of knots + degree + interecept"
-    # ------------------------------
-    # Generate coefficients for the bases
-    beta  = sample_coefs(nbases, np.arange(nbases), method = signal, bfix = bfix)
-    # ------------------------------
-    # Generate the function without noise 
-    ytrue = np.dot(bspline_bases, beta)
-    # ------------------------------
-    # Map the data to trendfiltering bases
-    # set low values of beta to zero and regenerate y
-    H     = gv_basemat.trendfiltering(n, degree)
-    Hinv  = gv_basemat.trendfiltering_inverse(n, degree)
-    Hscale     = gv_basemat.trendfiltering_scaled(n, degree)
-    Hinvscale  = gv_basemat.trendfiltering_inverse_scaled(n, degree)
-    btrue = np.dot(Hinv, ytrue)
-    btrue[np.abs(btrue) <= eps] = 0.
-    noise = np.random.normal(0, std, size = n * 2)
-    ytrue = np.dot(H, btrue)
-    y     = ytrue + noise[:n]
-    # ------------------------------
-    # Some test data?
-    ytest = ytrue + noise[n:]
-    # ------------------------------
-    # Signal to noise ratio 
-    # (experimental)
-    signal = np.mean(np.square(btrue[btrue != 0]))
-    snr    = signal / np.square(std)
-    #
-    return H, Hinv, Hscale, Hinvscale, y, ytest, ytrue, btrue, snr
+def timeseries(x, sfix, degree, snr = 2.0, signal = 'normal', bfix = None, seed = None):
 
-
-def changepoint_from_btrue (x, sfix, std,
-                 degree = 0, signal = "gamma", signal_params = {}, 
-                 seed = None,
-                 include_intercept = False, bfix = None,
-                 dummy = False,
-                 eps = 1e-8):
     if seed is not None: np.random.seed(seed)
     n = x.shape[0]
-    bidx  = np.floor(np.linspace(0, n, sfix + 2)[1:-1]).astype(int)
-    btrue = sample_coefs(n, bidx, method = signal, bfix = bfix, options = signal_params)
-    ytrue = Hdotv_unscaled(btrue, degree)
-    noise = np.random.normal(0, std, size = n * 2)
-    y     = ytrue + noise[:n]
+    bidx = np.floor(np.linspace(0, n, sfix + 2)[1:-1]).astype(int)
+    btrue_nz = sample_coefs(bidx.shape[0], np.arange(bidx.shape[0]), method = signal, bfix = bfix)
+
+    btrue = np.zeros(n)
+    btrue[bidx] = btrue_nz
+
+    # Select a random initial slope, next ones are created from changepoints.
+    slope = np.ones(x.shape[0]) * np.random.normal(0, 1, 1)
+    for i, idx in enumerate(bidx):
+        slope[idx:] = btrue_nz[i]
+
+    # Generate time series data
+    ytrue = slope.copy()
+    if degree == 1:
+        ytrue[0] = slope[0]
+        for i in range(1, n):
+            ytrue[i] = ytrue[i - 1] + slope[i]
+    elif degree == 2:
+        ytrue[0] = slope[0]
+        ytrue[1] = slope[1]
+        for i in range(2, n):
+            ytrue[i] = 2 * ytrue[i-1] - ytrue[i-2] + slope[i]
+
+    # Generate noise
+    signal = np.sum(np.square(ytrue)) / n
+    std = np.sqrt(signal) / snr
+    noise = np.random.normal(0, std, n * 2)
+    y = ytrue + noise[:n]
     ytest = ytrue + noise[n:]
-    signal = np.mean(np.square(btrue[btrue != 0]))
-    snr    = signal / np.square(std)
-    Xdummy = np.zeros((2,2))
+    return y, ytest, ytrue, btrue, std
+
+
+def changepoint_design (x, sfix, snr,
+                  degree = 0, signal = "gamma", signal_params = {}, 
+                  seed = None,
+                  include_intercept = False, bfix = None,
+                  dummy = False,
+                  eps = 1e-8):
+    y, ytest, ytrue, btrue, strue = timeseries(x, sfix, degree, 
+            snr = snr, signal = signal, bfix = bfix, seed = seed)
     if dummy:
-        return Xdummy, Xdummy, Xdummy, Xdummy, y, ytest, ytrue, btrue, snr
+        Xdummy = np.zeros((2,2))
+        return Xdummy, Xdummy, Xdummy, Xdummy, y, ytest, ytrue, btrue, strue
     else:
-        H     = gv_basemat.trendfiltering(n, degree)
-        Hinv  = gv_basemat.trendfiltering_inverse(n, degree)
-        Hscale     = gv_basemat.trendfiltering_scaled(n, degree)
-        Hinvscale  = gv_basemat.trendfiltering_inverse_scaled(n, degree)
-        return H, Hinv, Hscale, Hinvscale, y, ytest, ytrue, btrue, snr
+        n = x.shape[0]
+        H = gv_basemat.trendfiltering(n, degree)
+        Hinv = gv_basemat.trendfiltering_inverse(n, degree)
+        Hscale = gv_basemat.trendfiltering_scaled(n, degree)
+        Hinvscale = gv_basemat.trendfiltering_inverse_scaled(n, degree)
+        b_linreg = np.dot(Hinv, ytrue)
+        b_linreg[np.abs(b_linreg) <= 1e-8] = 0.
+        return H, Hinv, Hscale, Hinvscale, y, ytest, ytrue, b_linreg, strue
 
 
-def Hdotv_unscaled(v, d):
-    X3v1 = np.zeros_like(v)
-    v0 = v[:d]
-    v1 = v[d:]
-    X3v1[d:] = np.cumsum(v1)
-    for i in range(d):
-        X3v1 = np.cumsum(X3v1)
-    if d == 0:
-        Xv = X3v1
-    elif d == 1:
-        Xv = v[0] + X3v1
-    else:
-        X0v0 = np.dot(self._tf_X[:, :d], v0)
-        Xv = X0v0 + X3v1
-    return Xv
-    
-
-def equicorr_predictors_old (n, p, s, pve, ntest = 1000, 
-        signal = "normal", seed = None, 
-        rho = 0.5, bfix = None,
-        standardize = True):
-    '''
-    X is sampled from a multivariate normal, with covariance matrix S.
-    S has unit diagonal entries and constant off-diagonal entries rho.
-    '''
-    if seed is not None: np.random.seed(seed)
-    ntot  = n + ntest
-    iidX  = np.random.normal(size = ntot * p).reshape(ntot, p)
-    comR  = np.random.normal(size = ntot).reshape(ntot, 1)
-    Xall  = comR * np.sqrt(rho) + iidX * np.sqrt(1 - rho)
-    # split into training and test data
-    X     = Xall[:n, :]
-    Xtest = Xall[n:, :]
-    if standardize:
-        X = center_and_scale(X)
-        Xtest = center_and_scale(Xtest)
-    # sample betas
-    bidx  = np.random.choice(p, s, replace = False)
-    beta  = sample_coefs(p, bidx, method = signal, bfix = bfix)
-    # obtain sd from pve
-    se    = get_sd_from_pve(X, beta, pve)
-    # calculate the responses
-    y     = get_responses(X,     beta, se)
-    ytest = get_responses(Xtest, beta, se)
-    return X, y, Xtest, ytest, beta, se
+### def changepoint_from_bspline (x, knots, std,
+###                  degree = 0, signal = "gamma", seed = None,
+###                  include_intercept = False, bfix = None,
+###                  eps = 1e-8, get_bsplines = False):
+###     if seed is not None: np.random.seed(seed)
+###     # ------------------------------
+###     n = x.shape[0]
+###     # ------------------------------
+###     # Generate B-spline bases given the knots and degree
+###     bspline_bases = patsy.bs(x, knots = knots, degree = degree, include_intercept = include_intercept)
+###     nbases = knots.shape[0] + degree + int(include_intercept)
+###     assert bspline_bases.shape[1] == nbases, "Number of B-spline bases does not match the number of knots + degree + interecept"
+###     # ------------------------------
+###     # Generate coefficients for the bases
+###     beta  = sample_coefs(nbases, np.arange(nbases), method = signal, bfix = bfix)
+###     # ------------------------------
+###     # Generate the function without noise 
+###     ytrue = np.dot(bspline_bases, beta)
+###     # ------------------------------
+###     # Map the data to trendfiltering bases
+###     # set low values of beta to zero and regenerate y
+###     H     = gv_basemat.trendfiltering(n, degree)
+###     Hinv  = gv_basemat.trendfiltering_inverse(n, degree)
+###     Hscale     = gv_basemat.trendfiltering_scaled(n, degree)
+###     Hinvscale  = gv_basemat.trendfiltering_inverse_scaled(n, degree)
+###     btrue = np.dot(Hinv, ytrue)
+###     btrue[np.abs(btrue) <= eps] = 0.
+###     noise = np.random.normal(0, std, size = n * 2)
+###     ytrue = np.dot(H, btrue)
+###     y     = ytrue + noise[:n]
+###     # ------------------------------
+###     # Some test data?
+###     ytest = ytrue + noise[n:]
+###     # ------------------------------
+###     # Signal to noise ratio 
+###     # (experimental)
+###     signal = np.mean(np.square(btrue[btrue != 0]))
+###     snr    = signal / np.square(std)
+###     #
+###     return H, Hinv, Hscale, Hinvscale, y, ytest, ytrue, btrue, snr
+### 
+### 
+### def changepoint_from_btrue (x, sfix, std,
+###                  degree = 0, signal = "gamma", signal_params = {}, 
+###                  seed = None,
+###                  include_intercept = False, bfix = None,
+###                  dummy = False,
+###                  eps = 1e-8):
+###     if seed is not None: np.random.seed(seed)
+###     n = x.shape[0]
+###     bidx  = np.floor(np.linspace(0, n, sfix + 2)[1:-1]).astype(int)
+###     btrue = sample_coefs(n, bidx, method = signal, bfix = bfix, options = signal_params)
+###     ytrue = Hdotv_unscaled(btrue, degree)
+###     noise = np.random.normal(0, std, size = n * 2)
+###     y     = ytrue + noise[:n]
+###     ytest = ytrue + noise[n:]
+###     signal = np.mean(np.square(btrue[btrue != 0]))
+###     snr    = signal / np.square(std)
+###     Xdummy = np.zeros((2,2))
+###     if dummy:
+###         return Xdummy, Xdummy, Xdummy, Xdummy, y, ytest, ytrue, btrue, snr
+###     else:
+###         H     = gv_basemat.trendfiltering(n, degree)
+###         Hinv  = gv_basemat.trendfiltering_inverse(n, degree)
+###         Hscale     = gv_basemat.trendfiltering_scaled(n, degree)
+###         Hinvscale  = gv_basemat.trendfiltering_inverse_scaled(n, degree)
+###         return H, Hinv, Hscale, Hinvscale, y, ytest, ytrue, btrue, snr
+### 
+### 
+### def Hdotv_unscaled(v, d):
+###     X3v1 = np.zeros_like(v)
+###     v0 = v[:d]
+###     v1 = v[d:]
+###     X3v1[d:] = np.cumsum(v1)
+###     for i in range(d):
+###         X3v1 = np.cumsum(X3v1)
+###     if d == 0:
+###         Xv = X3v1
+###     elif d == 1:
+###         Xv = v[0] + X3v1
+###     else:
+###         X0v0 = np.dot(self._tf_X[:, :d], v0)
+###         Xv = X0v0 + X3v1
+###     return Xv
+###     
+### 
+### def equicorr_predictors_old (n, p, s, pve, ntest = 1000, 
+###         signal = "normal", seed = None, 
+###         rho = 0.5, bfix = None,
+###         standardize = True):
+###     '''
+###     X is sampled from a multivariate normal, with covariance matrix S.
+###     S has unit diagonal entries and constant off-diagonal entries rho.
+###     '''
+###     if seed is not None: np.random.seed(seed)
+###     ntot  = n + ntest
+###     iidX  = np.random.normal(size = ntot * p).reshape(ntot, p)
+###     comR  = np.random.normal(size = ntot).reshape(ntot, 1)
+###     Xall  = comR * np.sqrt(rho) + iidX * np.sqrt(1 - rho)
+###     # split into training and test data
+###     X     = Xall[:n, :]
+###     Xtest = Xall[n:, :]
+###     if standardize:
+###         X = center_and_scale(X)
+###         Xtest = center_and_scale(Xtest)
+###     # sample betas
+###     bidx  = np.random.choice(p, s, replace = False)
+###     beta  = sample_coefs(p, bidx, method = signal, bfix = bfix)
+###     # obtain sd from pve
+###     se    = get_sd_from_pve(X, beta, pve)
+###     # calculate the responses
+###     y     = get_responses(X,     beta, se)
+###     ytest = get_responses(Xtest, beta, se)
+###     return X, y, Xtest, ytest, beta, se

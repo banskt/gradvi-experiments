@@ -12,7 +12,7 @@ DSC:
                   modules/predict,
                   modules/score
   output:         /gpfs/commons/home/sbanerjee/simdata/sparse-regression/gradvi-experiments/linreg_indep
-  replicate:      10
+  replicate:      20
   define:
     simulate:     equicorrgauss
     initialize:   lasso
@@ -61,7 +61,7 @@ simparams:
   $se:     sigma
 
 equicorrgauss(simparams): equicorrgauss.py
-  pve:     0.4, 0.6, 0.8
+  pve:     0.6
   rho:     0.0
 
 # initialize with lasso

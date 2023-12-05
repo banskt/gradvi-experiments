@@ -12,7 +12,7 @@ DSC:
                   modules/predict,
                   modules/score
   output:         /gpfs/commons/groups/knowles_lab/sbanerjee/sparse-regression/gradvi-experiments/linreg_blockdiag
-  replicate:      10
+  replicate:      20
   define:
     simulate:     blockdiag
     initialize:   lasso
@@ -59,7 +59,7 @@ simparams:
   $se:     sigma
 
 blockdiag(simparams): blockdiag.py
-  pve:     0.4, 0.6, 0.8 
+  pve:     0.6
   rholist: [0.95, 0.95, 0.95]
   min_block_size: 1000
 
